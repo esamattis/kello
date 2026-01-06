@@ -38,7 +38,7 @@ export function playAlarmSound() {
     audioContext = new AudioContext();
     gainNode = audioContext.createGain();
     gainNode.connect(audioContext.destination);
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.setValueAtTime(1, audioContext.currentTime);
 
     // Create a pleasant chime-like sound
     const playChime = (startTime: number, frequency: number) => {
