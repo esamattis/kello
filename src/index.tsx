@@ -3,6 +3,38 @@ import { signal, computed } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import "./style.css";
 
+// Wake Lock state
+const wakeLockEnabled = signal(false);
+const wakeLockSupported = signal("wakeLock" in navigator);
+let wakeLockSentinel: WakeLockSentinel | null = null;
+
+async function requestWakeLock() {
+    if (!wakeLockSupported.value) return;
+
+    wakeLockSentinel = await navigator.wakeLock.request("screen");
+    wakeLockEnabled.value = true;
+
+    wakeLockSentinel.addEventListener("release", () => {
+        wakeLockEnabled.value = false;
+    });
+}
+
+async function releaseWakeLock() {
+    if (wakeLockSentinel) {
+        await wakeLockSentinel.release();
+        wakeLockSentinel = null;
+        wakeLockEnabled.value = false;
+    }
+}
+
+async function toggleWakeLock() {
+    if (wakeLockEnabled.value) {
+        await releaseWakeLock();
+    } else {
+        await requestWakeLock();
+    }
+}
+
 // Signal to store the current time
 const currentTime = signal(new Date());
 
@@ -196,6 +228,51 @@ function AnalogClock() {
     );
 }
 
+function WakeLockToggle() {
+    // Re-acquire wake lock when page becomes visible again
+    useEffect(() => {
+        const handleVisibilityChange = async () => {
+            if (
+                document.visibilityState === "visible" &&
+                wakeLockEnabled.value &&
+                !wakeLockSentinel
+            ) {
+                await requestWakeLock();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => {
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibilityChange,
+            );
+        };
+    }, []);
+
+    if (!wakeLockSupported.value) {
+        return null;
+    }
+
+    return (
+        <button
+            onClick={toggleWakeLock}
+            class={`fixed top-4 right-4 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                wakeLockEnabled.value
+                    ? "bg-green-500 text-white hover:bg-green-600"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+            title={
+                wakeLockEnabled.value
+                    ? "Screen will stay on"
+                    : "Screen may turn off"
+            }
+        >
+            {wakeLockEnabled.value ? "🔆 Staying Awake" : "💤 Allowing Sleep"}
+        </button>
+    );
+}
+
 export function App() {
     return (
         <div
@@ -209,6 +286,7 @@ export function App() {
                 backgroundColor: "#f5f5f5",
             }}
         >
+            <WakeLockToggle />
             <AnalogClock />
         </div>
     );
