@@ -98,6 +98,30 @@ function AnalogClock() {
         );
     }
 
+    // Generate 24-hour numbers (smaller, below the regular numbers)
+    const hour24Numbers = [];
+    for (let i = 1; i <= 12; i++) {
+        const angle = ((i / 12) * 360 - 90) * (Math.PI / 180);
+        const radius = 25; // Closer to center than the 12-hour numbers
+        const x = 50 + radius * Math.cos(angle);
+        const y = 50 + radius * Math.sin(angle);
+        const hour24 = i + 12; // 13-24
+        hour24Numbers.push(
+            <text
+                key={`number-24-${i}`}
+                x={x}
+                y={y}
+                text-anchor="middle"
+                dominant-baseline="central"
+                font-size="4"
+                font-family="Arial, sans-serif"
+                fill="#888888"
+            >
+                {hour24}
+            </text>,
+        );
+    }
+
     return (
         <svg
             viewBox="0 0 100 100"
@@ -125,6 +149,9 @@ function AnalogClock() {
 
             {/* Hour numbers */}
             {hourNumbers}
+
+            {/* 24-hour numbers */}
+            {hour24Numbers}
 
             {/* Hour hand */}
             <line
