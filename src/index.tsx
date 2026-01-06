@@ -2,6 +2,13 @@ import { render } from "preact";
 import { signal, computed } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import "./style.css";
+import {
+    checkAlarm,
+    triggerAlarm,
+    AlarmToggle,
+    AlarmTimeInput,
+    AlarmOverlay,
+} from "./alarm";
 
 // Wake Lock state
 const wakeLockEnabled = signal(false);
@@ -38,6 +45,9 @@ async function toggleWakeLock() {
 // Signal to store the current time
 const currentTime = signal(new Date());
 
+// Track last checked minute to avoid re-triggering
+const lastCheckedMinute = signal(-1);
+
 // Computed signals for clock hands angles
 const secondsAngle = computed(() => {
     const seconds = currentTime.value.getSeconds();
@@ -61,6 +71,18 @@ function AnalogClock() {
     useEffect(() => {
         const interval = setInterval(() => {
             currentTime.value = new Date();
+
+            // Check alarm once per minute
+            const currentMinute =
+                currentTime.value.getHours() * 60 +
+                currentTime.value.getMinutes();
+            if (currentMinute !== lastCheckedMinute.value) {
+                lastCheckedMinute.value = currentMinute;
+
+                if (checkAlarm(currentTime.value)) {
+                    triggerAlarm();
+                }
+            }
         }, 50);
 
         return () => clearInterval(interval);
@@ -257,7 +279,7 @@ function WakeLockToggle() {
     return (
         <button
             onClick={toggleWakeLock}
-            class={`fixed top-4 right-4 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            class={`w-full px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 wakeLockEnabled.value
                     ? "bg-green-500 text-white hover:bg-green-600"
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -286,7 +308,12 @@ export function App() {
                 backgroundColor: "#f5f5f5",
             }}
         >
-            <WakeLockToggle />
+            <div class="fixed top-4 right-4 flex flex-col gap-2">
+                <WakeLockToggle />
+                <AlarmToggle />
+                <AlarmTimeInput />
+            </div>
+            <AlarmOverlay />
             <AnalogClock />
         </div>
     );
