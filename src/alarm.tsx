@@ -4,7 +4,7 @@ import { useEffect, useRef } from "preact/hooks";
 // Local storage key
 const ALARM_STORAGE_KEY = "kello-alarm-settings";
 
-// Default alarm settings
+// Default alarm settings (hours now 0-11)
 const DEFAULT_SETTINGS = { enabled: false, hours: 7, minutes: 0 };
 
 // Load saved alarm settings from localStorage
@@ -23,10 +23,11 @@ function loadAlarmSettings(): {
         if (!result || typeof result !== "object") {
             return DEFAULT_SETTINGS;
         }
+        const hours = typeof result.hours === "number" ? result.hours % 12 : 7;
         return {
             enabled:
                 typeof result.enabled === "boolean" ? result.enabled : false,
-            hours: typeof result.hours === "number" ? result.hours : 7,
+            hours: hours,
             minutes: typeof result.minutes === "number" ? result.minutes : 0,
         };
     } catch {
@@ -37,7 +38,7 @@ function loadAlarmSettings(): {
 // Initialize signals with saved values
 const savedSettings = loadAlarmSettings();
 
-// Alarm state
+// Alarm state (hours stored as 0-11)
 export const alarmEnabled = signal(savedSettings.enabled);
 export const alarmHours = signal(savedSettings.hours);
 export const alarmMinutes = signal(savedSettings.minutes);
@@ -58,30 +59,35 @@ let audioContext: AudioContext | null = null;
 let oscillatorNode: OscillatorNode | null = null;
 let gainNode: GainNode | null = null;
 
-// Computed signal for formatted alarm time
+// Computed signal for formatted alarm time (shows 12-hour format)
 export const alarmTimeFormatted = computed(() => {
     const h = alarmHours.value.toString().padStart(2, "0");
     const m = alarmMinutes.value.toString().padStart(2, "0");
     return `${h}:${m}`;
 });
 
-// Check if current time matches alarm time
+// Check if current time matches alarm time (triggers on both AM and PM)
 export function checkAlarm(currentTime: Date): boolean {
     const hours = currentTime.getHours();
     const minutes = currentTime.getMinutes();
+
+    // Convert current 24-hour time to 12-hour format for comparison
+    const hours12 = hours % 12;
 
     console.log("checkAlarm called:", {
         enabled: alarmEnabled.value,
         triggered: alarmTriggered.value,
         currentTime: `${hours}:${minutes}`,
         alarmTime: `${alarmHours.value}:${alarmMinutes.value}`,
+        hours12,
     });
 
     if (!alarmEnabled.value || alarmTriggered.value) {
         return false;
     }
 
-    return hours === alarmHours.value && minutes === alarmMinutes.value;
+    // Match on 12-hour basis (triggers at both AM and PM)
+    return hours12 === alarmHours.value && minutes === alarmMinutes.value;
 }
 
 // Play a pleasant alarm sound
@@ -169,23 +175,14 @@ export function resetAlarmTrigger() {
     // This allows the alarm to trigger again the next day
 }
 
-// Update alarm hours with wrapping
+// Update alarm hours with wrapping (0-11)
 export function setAlarmHours(hours: number) {
-    alarmHours.value = ((hours % 24) + 24) % 24;
+    alarmHours.value = ((hours % 12) + 12) % 12;
 }
 
 // Update alarm minutes with wrapping
 export function setAlarmMinutes(minutes: number) {
     alarmMinutes.value = ((minutes % 60) + 60) % 60;
-}
-
-// Toggle AM/PM for alarm
-export function toggleAlarmAMPM() {
-    if (alarmHours.value >= 12) {
-        alarmHours.value = alarmHours.value - 12;
-    } else {
-        alarmHours.value = alarmHours.value + 12;
-    }
 }
 
 // Toggle alarm enabled state
@@ -254,7 +251,7 @@ export function AlarmTimeInput() {
             <input
                 type="number"
                 min="0"
-                max="23"
+                max="11"
                 value={alarmHours.value}
                 onInput={handleHoursChange}
                 class="w-14 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
@@ -268,26 +265,16 @@ export function AlarmTimeInput() {
                 onInput={handleMinutesChange}
                 class="w-14 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
             />
-            <button
-                onClick={toggleAlarmAMPM}
-                class="px-2 py-1 text-sm font-medium bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors"
-                title="Toggle AM/PM"
-            >
-                {alarmHours.value >= 12 ? "PM" : "AM"}
-            </button>
         </div>
     );
 }
 
 // Computed signal for alarm hand angle (12-hour display)
 export const alarmHandAngle = computed(() => {
-    const hours = alarmHours.value % 12;
+    const hours = alarmHours.value;
     const minutes = alarmMinutes.value;
     return ((hours + minutes / 60) / 12) * 360;
 });
-
-// Signal to track if we're in the PM half (13-24)
-export const isAlarmPM = computed(() => alarmHours.value >= 12);
 
 interface AlarmHandProps {
     svgRef: { current: SVGSVGElement | null };
@@ -323,16 +310,7 @@ export function AlarmHand({ svgRef }: AlarmHandProps) {
         const hours = Math.floor(totalHours);
         const minutes = Math.round((totalHours - hours) * 60);
 
-        // Preserve AM/PM from current setting
-        const currentIsPM = alarmHours.value >= 12;
-        const newHours = currentIsPM ? hours + 12 : hours;
-
-        // Handle edge case: 12:00 in 12-hour format
-        if (hours === 0) {
-            alarmHours.value = currentIsPM ? 12 : 0;
-        } else {
-            alarmHours.value = newHours % 24;
-        }
+        alarmHours.value = hours % 12;
         alarmMinutes.value = minutes % 60;
     };
 
@@ -439,18 +417,6 @@ export function AlarmHand({ svgRef }: AlarmHandProps) {
                 fill="#f97316"
                 transform={`rotate(${alarmHandAngle.value} 50 50)`}
             />
-            {/* AM/PM indicator near the center */}
-            <text
-                x="50"
-                y="42"
-                text-anchor="middle"
-                font-size="4"
-                font-family="Arial, sans-serif"
-                font-weight="bold"
-                fill="#f97316"
-            >
-                {isAlarmPM.value ? "PM" : "AM"}
-            </text>
         </g>
     );
 }
