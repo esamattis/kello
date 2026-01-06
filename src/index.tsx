@@ -78,7 +78,7 @@ function AnalogClock() {
     const hourNumbers = [];
     for (let i = 1; i <= 12; i++) {
         const angle = ((i / 12) * 360 - 90) * (Math.PI / 180);
-        const radius = 38;
+        const radius = 32;
         const x = 50 + radius * Math.cos(angle);
         const y = 50 + radius * Math.sin(angle);
         hourNumbers.push(
