@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { signal, computed } from "@preact/signals";
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import "./style.css";
 import {
     checkAlarm,
@@ -8,6 +8,8 @@ import {
     AlarmToggle,
     AlarmTimeInput,
     AlarmOverlay,
+    AlarmHand,
+    alarmEnabled,
 } from "./alarm";
 
 // Wake Lock state
@@ -68,6 +70,8 @@ const hoursAngle = computed(() => {
 });
 
 function AnalogClock() {
+    const svgRef = useRef<SVGSVGElement>(null);
+
     useEffect(() => {
         const interval = setInterval(() => {
             currentTime.value = new Date();
@@ -178,6 +182,7 @@ function AnalogClock() {
 
     return (
         <svg
+            ref={svgRef}
             viewBox="0 0 100 100"
             style={{
                 width: "100vmin",
@@ -206,6 +211,9 @@ function AnalogClock() {
 
             {/* 24-hour numbers */}
             {hour24Numbers}
+
+            {/* Alarm hand (only shown when alarm is enabled) */}
+            {alarmEnabled.value && <AlarmHand svgRef={svgRef} />}
 
             {/* Hour hand */}
             <line

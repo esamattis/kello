@@ -1,5 +1,5 @@
 import { signal, computed, effect } from "@preact/signals";
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 
 // Local storage key
 const ALARM_STORAGE_KEY = "kello-alarm-settings";
@@ -179,6 +179,15 @@ export function setAlarmMinutes(minutes: number) {
     alarmMinutes.value = ((minutes % 60) + 60) % 60;
 }
 
+// Toggle AM/PM for alarm
+export function toggleAlarmAMPM() {
+    if (alarmHours.value >= 12) {
+        alarmHours.value = alarmHours.value - 12;
+    } else {
+        alarmHours.value = alarmHours.value + 12;
+    }
+}
+
 // Toggle alarm enabled state
 export function toggleAlarm() {
     alarmEnabled.value = !alarmEnabled.value;
@@ -259,7 +268,190 @@ export function AlarmTimeInput() {
                 onInput={handleMinutesChange}
                 class="w-14 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
             />
+            <button
+                onClick={toggleAlarmAMPM}
+                class="px-2 py-1 text-sm font-medium bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors"
+                title="Toggle AM/PM"
+            >
+                {alarmHours.value >= 12 ? "PM" : "AM"}
+            </button>
         </div>
+    );
+}
+
+// Computed signal for alarm hand angle (12-hour display)
+export const alarmHandAngle = computed(() => {
+    const hours = alarmHours.value % 12;
+    const minutes = alarmMinutes.value;
+    return ((hours + minutes / 60) / 12) * 360;
+});
+
+// Signal to track if we're in the PM half (13-24)
+export const isAlarmPM = computed(() => alarmHours.value >= 12);
+
+interface AlarmHandProps {
+    svgRef: { current: SVGSVGElement | null };
+}
+
+export function AlarmHand({ svgRef }: AlarmHandProps) {
+    const isDragging = useRef(false);
+
+    const getAngleFromEvent = (
+        clientX: number,
+        clientY: number,
+    ): number | null => {
+        const svg = svgRef.current;
+        if (!svg) return null;
+
+        const rect = svg.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+
+        // Calculate angle in degrees (0 = top, clockwise)
+        let angle = Math.atan2(dx, -dy) * (180 / Math.PI);
+        if (angle < 0) angle += 360;
+
+        return angle;
+    };
+
+    const updateAlarmFromAngle = (angle: number) => {
+        // Convert angle to hours (0-12) and minutes
+        const totalHours = (angle / 360) * 12;
+        const hours = Math.floor(totalHours);
+        const minutes = Math.round((totalHours - hours) * 60);
+
+        // Preserve AM/PM from current setting
+        const currentIsPM = alarmHours.value >= 12;
+        const newHours = currentIsPM ? hours + 12 : hours;
+
+        // Handle edge case: 12:00 in 12-hour format
+        if (hours === 0) {
+            alarmHours.value = currentIsPM ? 12 : 0;
+        } else {
+            alarmHours.value = newHours % 24;
+        }
+        alarmMinutes.value = minutes % 60;
+    };
+
+    const handleStart = (clientX: number, clientY: number) => {
+        isDragging.current = true;
+        const angle = getAngleFromEvent(clientX, clientY);
+        if (angle !== null) {
+            updateAlarmFromAngle(angle);
+        }
+    };
+
+    const handleMove = (clientX: number, clientY: number) => {
+        if (!isDragging.current) return;
+        const angle = getAngleFromEvent(clientX, clientY);
+        if (angle !== null) {
+            updateAlarmFromAngle(angle);
+        }
+    };
+
+    const handleEnd = () => {
+        isDragging.current = false;
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            handleMove(e.clientX, e.clientY);
+        };
+
+        const handleMouseUp = () => {
+            handleEnd();
+        };
+
+        const handleTouchMove = (e: TouchEvent) => {
+            const touch = e.touches[0];
+            if (touch) {
+                handleMove(touch.clientX, touch.clientY);
+            }
+        };
+
+        const handleTouchEnd = () => {
+            handleEnd();
+        };
+
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+        document.addEventListener("touchmove", handleTouchMove);
+        document.addEventListener("touchend", handleTouchEnd);
+
+        return () => {
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+            document.removeEventListener("touchmove", handleTouchMove);
+            document.removeEventListener("touchend", handleTouchEnd);
+        };
+    }, []);
+
+    const onMouseDown = (e: MouseEvent) => {
+        e.preventDefault();
+        handleStart(e.clientX, e.clientY);
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        if (touch) {
+            handleStart(touch.clientX, touch.clientY);
+        }
+    };
+
+    return (
+        <g
+            style={{ cursor: "pointer" }}
+            onMouseDown={onMouseDown}
+            onTouchStart={onTouchStart}
+        >
+            {/* Larger invisible hit area for easier grabbing */}
+            <line
+                x1="50"
+                y1="50"
+                x2="50"
+                y2="20"
+                stroke="transparent"
+                stroke-width="8"
+                stroke-linecap="round"
+                transform={`rotate(${alarmHandAngle.value} 50 50)`}
+            />
+            {/* Visible alarm hand */}
+            <line
+                x1="50"
+                y1="50"
+                x2="50"
+                y2="20"
+                stroke="#f97316"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-dasharray="2,2"
+                transform={`rotate(${alarmHandAngle.value} 50 50)`}
+            />
+            {/* Alarm indicator at the end */}
+            <circle
+                cx="50"
+                cy="20"
+                r="3"
+                fill="#f97316"
+                transform={`rotate(${alarmHandAngle.value} 50 50)`}
+            />
+            {/* AM/PM indicator near the center */}
+            <text
+                x="50"
+                y="42"
+                text-anchor="middle"
+                font-size="4"
+                font-family="Arial, sans-serif"
+                font-weight="bold"
+                fill="#f97316"
+            >
+                {isAlarmPM.value ? "PM" : "AM"}
+            </text>
+        </g>
     );
 }
 
