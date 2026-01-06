@@ -1,0 +1,22 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "check": "tsc",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@preact/signals": "^2.5.1",
+        "@tailwindcss/vite": "^4.1.18",
+        "preact": "^10.26.9",
+        "prettier": "^3.7.4",
+        "tailwindcss": "^4.1.18"
+    },
+    "devDependencies": {
+        "@preact/preset-vite": "^2.10.2",
+        "typescript": "^5.9.3",
+        "vite": "^7.0.4"
+    }
+}
