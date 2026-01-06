@@ -1,11 +1,57 @@
-import { signal, computed } from "@preact/signals";
+import { signal, computed, effect } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 
+// Local storage key
+const ALARM_STORAGE_KEY = "kello-alarm-settings";
+
+// Default alarm settings
+const DEFAULT_SETTINGS = { enabled: false, hours: 7, minutes: 0 };
+
+// Load saved alarm settings from localStorage
+function loadAlarmSettings(): {
+    enabled: boolean;
+    hours: number;
+    minutes: number;
+} {
+    const saved = localStorage.getItem(ALARM_STORAGE_KEY);
+    if (!saved) {
+        return DEFAULT_SETTINGS;
+    }
+    // Parsing external data requires error handling
+    try {
+        const result = JSON.parse(saved) as Record<string, unknown> | null;
+        if (!result || typeof result !== "object") {
+            return DEFAULT_SETTINGS;
+        }
+        return {
+            enabled:
+                typeof result.enabled === "boolean" ? result.enabled : false,
+            hours: typeof result.hours === "number" ? result.hours : 7,
+            minutes: typeof result.minutes === "number" ? result.minutes : 0,
+        };
+    } catch {
+        return DEFAULT_SETTINGS;
+    }
+}
+
+// Initialize signals with saved values
+const savedSettings = loadAlarmSettings();
+
 // Alarm state
-export const alarmEnabled = signal(false);
-export const alarmHours = signal(7);
-export const alarmMinutes = signal(0);
+export const alarmEnabled = signal(savedSettings.enabled);
+export const alarmHours = signal(savedSettings.hours);
+export const alarmMinutes = signal(savedSettings.minutes);
 export const alarmTriggered = signal(false);
+
+// Save alarm settings to localStorage whenever they change
+effect(() => {
+    const settings = {
+        enabled: alarmEnabled.value,
+        hours: alarmHours.value,
+        minutes: alarmMinutes.value,
+    };
+    localStorage.setItem(ALARM_STORAGE_KEY, JSON.stringify(settings));
+});
 
 // Audio context for alarm sound
 let audioContext: AudioContext | null = null;
@@ -21,12 +67,19 @@ export const alarmTimeFormatted = computed(() => {
 
 // Check if current time matches alarm time
 export function checkAlarm(currentTime: Date): boolean {
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+
+    console.log("checkAlarm called:", {
+        enabled: alarmEnabled.value,
+        triggered: alarmTriggered.value,
+        currentTime: `${hours}:${minutes}`,
+        alarmTime: `${alarmHours.value}:${alarmMinutes.value}`,
+    });
+
     if (!alarmEnabled.value || alarmTriggered.value) {
         return false;
     }
-
-    const hours = currentTime.getHours();
-    const minutes = currentTime.getMinutes();
 
     return hours === alarmHours.value && minutes === alarmMinutes.value;
 }
