@@ -14,6 +14,7 @@ import {
     computeTimeToNextAlarm,
     alarmTimeFormatted,
 } from "./alarm";
+import { Tooltip } from "./Tooltip";
 
 // Wake Lock state
 const wakeLockEnabled = signal(false);
@@ -345,14 +346,19 @@ function AlarmBellIcon() {
                     stroke-linejoin="round"
                 />
             </svg>
-            <div class="text-white font-mono text-xs font-bold">
-                {alarmTimeFormatted.value}
-            </div>
-            {countdown && (
-                <div class="text-white font-mono text-[10px] font-bold opacity-80">
-                    {countdown.hours.toString().padStart(2, "0")}:
-                    {countdown.minutes.toString().padStart(2, "0")}
+            <Tooltip content="Alarm set time" position="left">
+                <div class="text-white font-mono text-xs font-bold">
+                    {alarmTimeFormatted.value}
                 </div>
+            </Tooltip>
+
+            {countdown && (
+                <Tooltip content="Time until next alarm" position="left">
+                    <div class="text-white font-mono text-[10px] font-bold opacity-80">
+                        {countdown.hours.toString().padStart(2, "0")}:
+                        {countdown.minutes.toString().padStart(2, "0")}
+                    </div>
+                </Tooltip>
             )}
         </div>
     );
