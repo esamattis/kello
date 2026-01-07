@@ -398,7 +398,7 @@ export function AlarmHand({ svgRef }: AlarmHandProps) {
                 x1="50"
                 y1="50"
                 x2="50"
-                y2="20"
+                y2="25"
                 stroke="transparent"
                 stroke-width="8"
                 stroke-linecap="round"
@@ -409,19 +409,10 @@ export function AlarmHand({ svgRef }: AlarmHandProps) {
                 x1="50"
                 y1="50"
                 x2="50"
-                y2="20"
+                y2="25"
                 stroke="#f97316"
-                stroke-width="2.5"
+                stroke-width="1"
                 stroke-linecap="round"
-                stroke-dasharray="2,2"
-                transform={`rotate(${alarmHandAngle.value} 50 50)`}
-            />
-            {/* Alarm indicator at the end */}
-            <circle
-                cx="50"
-                cy="20"
-                r="3"
-                fill="#f97316"
                 transform={`rotate(${alarmHandAngle.value} 50 50)`}
             />
         </g>

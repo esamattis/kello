@@ -205,6 +205,7 @@ function AnalogClock() {
                 width: "100vmin",
                 height: "100vmin",
                 display: "block",
+                userSelect: "none",
             }}
         >
             {/* Clock face */}
