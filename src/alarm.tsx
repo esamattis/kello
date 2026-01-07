@@ -1,4 +1,4 @@
-import { signal, computed, effect } from "@preact/signals";
+import { signal, computed, effect, Signal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 
 // Local storage key
@@ -65,6 +65,55 @@ export const alarmTimeFormatted = computed(() => {
     const m = alarmMinutes.value.toString().padStart(2, "0");
     return `${h}:${m}`;
 });
+
+// Computed signal for time until next alarm
+export function computeTimeToNextAlarm(currentTime: Signal<Date>) {
+    return computed(() => {
+        if (!alarmEnabled.value) {
+            return null;
+        }
+
+        const now = currentTime.value;
+        const currentHours = now.getHours();
+        const currentMinutes = now.getMinutes();
+        const currentSeconds = now.getSeconds();
+
+        // Convert current time to minutes since midnight
+        const currentTotalMinutes = currentHours * 60 + currentMinutes;
+        const currentTotalSeconds = currentTotalMinutes * 60 + currentSeconds;
+
+        // Calculate next alarm occurrences in 24h format
+        const alarmTotalMinutes1 = alarmHours.value * 60 + alarmMinutes.value;
+        const alarmTotalMinutes2 =
+            (alarmHours.value + 12) * 60 + alarmMinutes.value;
+
+        // Convert to seconds
+        const alarmTotalSeconds1 = alarmTotalMinutes1 * 60;
+        const alarmTotalSeconds2 = alarmTotalMinutes2 * 60;
+
+        // Find the next alarm time
+        let secondsUntilAlarm: number;
+
+        if (currentTotalSeconds < alarmTotalSeconds1) {
+            // Next alarm is today at first occurrence
+            secondsUntilAlarm = alarmTotalSeconds1 - currentTotalSeconds;
+        } else if (currentTotalSeconds < alarmTotalSeconds2) {
+            // Next alarm is today at second occurrence
+            secondsUntilAlarm = alarmTotalSeconds2 - currentTotalSeconds;
+        } else {
+            // Next alarm is tomorrow at first occurrence
+            const secondsInDay = 24 * 60 * 60;
+            secondsUntilAlarm =
+                secondsInDay - currentTotalSeconds + alarmTotalSeconds1;
+        }
+
+        const hours = Math.floor(secondsUntilAlarm / 3600);
+        const minutes = Math.floor((secondsUntilAlarm % 3600) / 60);
+        const seconds = secondsUntilAlarm % 60;
+
+        return { hours, minutes, seconds };
+    });
+}
 
 // Check if current time matches alarm time (triggers on both AM and PM)
 export function checkAlarm(currentTime: Date): boolean {
@@ -228,7 +277,13 @@ export function AlarmToggle() {
     );
 }
 
-export function AlarmTimeInput() {
+interface AlarmTimeInputProps {
+    currentTime: Signal<Date>;
+}
+
+export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
+    const timeToNextAlarm = computeTimeToNextAlarm(currentTime);
+
     const handleHoursChange = (e: Event) => {
         const target = e.target as HTMLInputElement;
         const value = parseInt(target.value, 10);
@@ -246,25 +301,34 @@ export function AlarmTimeInput() {
     };
 
     return (
-        <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600">Alarm:</label>
-            <input
-                type="number"
-                min="0"
-                max="11"
-                value={alarmHours.value}
-                onInput={handleHoursChange}
-                class="w-14 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
-            />
-            <span class="text-gray-600">:</span>
-            <input
-                type="number"
-                min="0"
-                max="59"
-                value={alarmMinutes.value}
-                onInput={handleMinutesChange}
-                class="w-14 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
-            />
+        <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+                <label class="text-sm text-gray-600">Alarm:</label>
+                <input
+                    type="number"
+                    min="0"
+                    max="11"
+                    value={alarmHours.value}
+                    onInput={handleHoursChange}
+                    class="w-14 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
+                />
+                <span class="text-gray-600">:</span>
+                <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={alarmMinutes.value}
+                    onInput={handleMinutesChange}
+                    class="w-14 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
+                />
+            </div>
+            {timeToNextAlarm.value && (
+                <div class="text-xs text-gray-500 text-right">
+                    Next in {timeToNextAlarm.value.hours}h{" "}
+                    {timeToNextAlarm.value.minutes}m{" "}
+                    {timeToNextAlarm.value.seconds}s
+                </div>
+            )}
         </div>
     );
 }
