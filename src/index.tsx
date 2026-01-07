@@ -283,6 +283,30 @@ function AnalogClock() {
     );
 }
 
+function DigitalClock() {
+    const timeString = computed(() => {
+        const hours = currentTime.value.getHours().toString().padStart(2, "0");
+        const minutes = currentTime.value
+            .getMinutes()
+            .toString()
+            .padStart(2, "0");
+        const seconds = currentTime.value
+            .getSeconds()
+            .toString()
+            .padStart(2, "0");
+        return `${hours}:${minutes}:${seconds}`;
+    });
+
+    return (
+        <div
+            class="fixed top-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg font-mono text-lg font-bold shadow-lg"
+            style={{ zIndex: 1000 }}
+        >
+            {timeString.value}
+        </div>
+    );
+}
+
 function WakeLockToggle() {
     // Re-acquire wake lock when page becomes visible again
     useEffect(() => {
@@ -331,6 +355,7 @@ function WakeLockToggle() {
 export function App() {
     return (
         <div>
+            <DigitalClock />
             <AlarmOverlay />
             {/* Clock container - 100dvh for mobile landscape support */}
             <div
