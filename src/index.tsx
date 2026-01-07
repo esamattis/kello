@@ -21,6 +21,15 @@ const wakeLockEnabled = signal(false);
 const wakeLockSupported = signal("wakeLock" in navigator);
 let wakeLockSentinel: WakeLockSentinel | null = null;
 
+// Fullscreen state
+const fullscreenEnabled = signal(false);
+const fullscreenSupported = signal(
+    document.fullscreenEnabled ||
+        // @ts-ignore - webkit prefixed
+        document.webkitFullscreenEnabled ||
+        false,
+);
+
 async function requestWakeLock() {
     if (!wakeLockSupported.value) return;
 
@@ -45,6 +54,22 @@ async function toggleWakeLock() {
         await releaseWakeLock();
     } else {
         await requestWakeLock();
+    }
+}
+
+async function toggleFullscreen() {
+    if (!fullscreenSupported.value) return;
+
+    if (fullscreenEnabled.value) {
+        if (document.exitFullscreen) {
+            await document.exitFullscreen();
+        }
+    } else {
+        if (document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+            // Scroll to top after entering fullscreen
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
     }
 }
 
@@ -391,27 +416,78 @@ function WakeLockToggle() {
     }
 
     return (
-        <button
-            onClick={toggleWakeLock}
-            class={`w-full px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+        <Tooltip
+            content={
                 wakeLockEnabled.value
-                    ? "bg-green-500 text-white hover:bg-green-600"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-            title={
-                wakeLockEnabled.value
-                    ? "Screen will stay on"
-                    : "Screen may turn off"
+                    ? "Click to allow the screen to turn off"
+                    : "Click to keep the screen on"
             }
         >
-            {wakeLockEnabled.value ? "🔆 Staying Awake" : "💤 Allowing Sleep"}
-        </button>
+            <button
+                onClick={toggleWakeLock}
+                class={`w-full px-4 py-4 rounded-full text-sm font-medium transition-colors ${
+                    wakeLockEnabled.value
+                        ? "bg-green-500 text-white hover:bg-green-600"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+                title={
+                    wakeLockEnabled.value
+                        ? "Screen will stay on"
+                        : "Screen may turn off"
+                }
+            >
+                {wakeLockEnabled.value
+                    ? "🔆 Staying Awake"
+                    : "💤 Allowing Sleep"}
+            </button>
+        </Tooltip>
+    );
+}
+
+function FullscreenToggle() {
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            fullscreenEnabled.value = !!document.fullscreenElement;
+        };
+
+        document.addEventListener("fullscreenchange", handleFullscreenChange);
+        return () => {
+            document.removeEventListener(
+                "fullscreenchange",
+                handleFullscreenChange,
+            );
+        };
+    }, []);
+
+    if (!fullscreenSupported.value) {
+        return null;
+    }
+
+    return (
+        <Tooltip
+            content={
+                fullscreenEnabled.value ? "Exit fullscreen" : "Enter fullscreen"
+            }
+        >
+            <button
+                onClick={toggleFullscreen}
+                class={`w-full px-4 py-4 rounded-full text-sm font-medium transition-colors ${
+                    fullscreenEnabled.value
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+            >
+                {fullscreenEnabled.value
+                    ? "🖥️ Exit Fullscreen"
+                    : "⛶ Enter Fullscreen"}
+            </button>
+        </Tooltip>
     );
 }
 
 export function App() {
     return (
-        <div>
+        <div style={{ overflow: "hidden", width: "100%" }}>
             <DigitalClock />
             <AlarmBellIcon />
             <AlarmOverlay />
@@ -422,7 +498,7 @@ export function App() {
                     justifyContent: "center",
                     alignItems: "center",
                     height: "100dvh",
-                    width: "100vw",
+                    width: "100%",
                     margin: 0,
                     padding: 0,
                     backgroundColor: "#f5f5f5",
@@ -438,15 +514,23 @@ export function App() {
                     backgroundColor: "#ffffff",
                     padding: "2rem",
                     minHeight: "30vh",
+                    width: "100%",
                 }}
             >
-                <div class="max-w-md mx-auto flex flex-col gap-4">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-2">
-                        Controls
-                    </h2>
+                <div class="mt-5 max-w-md mx-auto flex flex-col gap-4">
+                    <FullscreenToggle />
                     <WakeLockToggle />
                     <AlarmToggle />
                     <AlarmTimeInput currentTime={currentTime} />
+                </div>
+                <div class="mt-8 text-center">
+                    <a
+                        href="https://github.com/esamattis/kello"
+                        rel="noopener noreferrer"
+                        class="text-gray-600 hover:text-gray-900 text-sm"
+                    >
+                        GitHub
+                    </a>
                 </div>
             </div>
         </div>
