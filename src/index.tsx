@@ -10,6 +10,7 @@ import {
     AlarmOverlay,
     AlarmHand,
     alarmEnabled,
+    useAlarmHandDrag,
 } from "./alarm";
 
 // Wake Lock state
@@ -71,6 +72,22 @@ const hoursAngle = computed(() => {
 
 function AnalogClock() {
     const svgRef = useRef<SVGSVGElement>(null);
+    const { handleStart } = useAlarmHandDrag(svgRef);
+
+    const onClockFaceClick = (e: MouseEvent) => {
+        if (!alarmEnabled.value) return;
+        e.preventDefault();
+        handleStart(e.clientX, e.clientY);
+    };
+
+    const onClockFaceTouchStart = (e: TouchEvent) => {
+        if (!alarmEnabled.value) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        if (touch) {
+            handleStart(touch.clientX, touch.clientY);
+        }
+    };
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -198,6 +215,11 @@ function AnalogClock() {
                 fill="#ffffff"
                 stroke="#333333"
                 stroke-width="2"
+                style={{
+                    cursor: alarmEnabled.value ? "pointer" : "default",
+                }}
+                onMouseDown={onClockFaceClick}
+                onTouchStart={onClockFaceTouchStart}
             />
 
             {/* Hour markers */}

@@ -276,11 +276,8 @@ export const alarmHandAngle = computed(() => {
     return ((hours + minutes / 60) / 12) * 360;
 });
 
-interface AlarmHandProps {
-    svgRef: { current: SVGSVGElement | null };
-}
-
-export function AlarmHand({ svgRef }: AlarmHandProps) {
+// Hook to provide alarm hand drag functionality
+export function useAlarmHandDrag(svgRef: { current: SVGSVGElement | null }) {
     const isDragging = useRef(false);
 
     const getAngleFromEvent = (
@@ -366,6 +363,16 @@ export function AlarmHand({ svgRef }: AlarmHandProps) {
             document.removeEventListener("touchend", handleTouchEnd);
         };
     }, []);
+
+    return { handleStart };
+}
+
+interface AlarmHandProps {
+    svgRef: { current: SVGSVGElement | null };
+}
+
+export function AlarmHand({ svgRef }: AlarmHandProps) {
+    const { handleStart } = useAlarmHandDrag(svgRef);
 
     const onMouseDown = (e: MouseEvent) => {
         e.preventDefault();
