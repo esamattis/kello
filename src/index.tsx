@@ -202,8 +202,10 @@ function AnalogClock() {
             ref={svgRef}
             viewBox="0 0 100 100"
             style={{
-                width: "100vmin",
-                height: "100vmin",
+                width: "100%",
+                height: "100%",
+                maxWidth: "100vmin",
+                maxHeight: "100vmin",
                 display: "block",
                 userSelect: "none",
             }}
@@ -330,16 +332,18 @@ export function App() {
     return (
         <div>
             <AlarmOverlay />
-            {/* Clock container - 100vh */}
+            {/* Clock container - 100dvh for mobile landscape support */}
             <div
                 style={{
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
-                    height: "100vh",
+                    height: "100dvh",
+                    width: "100vw",
                     margin: 0,
                     padding: 0,
                     backgroundColor: "#f5f5f5",
+                    overflow: "hidden",
                 }}
             >
                 <AnalogClock />
