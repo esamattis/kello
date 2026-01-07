@@ -393,23 +393,11 @@ export function AlarmHand({ svgRef }: AlarmHandProps) {
             onMouseDown={onMouseDown}
             onTouchStart={onTouchStart}
         >
-            {/* Larger invisible hit area for easier grabbing */}
             <line
                 x1="50"
                 y1="50"
                 x2="50"
-                y2="25"
-                stroke="transparent"
-                stroke-width="8"
-                stroke-linecap="round"
-                transform={`rotate(${alarmHandAngle.value} 50 50)`}
-            />
-            {/* Visible alarm hand */}
-            <line
-                x1="50"
-                y1="50"
-                x2="50"
-                y2="25"
+                y2="35"
                 stroke="#f97316"
                 stroke-width="1"
                 stroke-linecap="round"
