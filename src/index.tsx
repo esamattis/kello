@@ -328,24 +328,40 @@ function WakeLockToggle() {
 
 export function App() {
     return (
-        <div
-            style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: "100vh",
-                margin: 0,
-                padding: 0,
-                backgroundColor: "#f5f5f5",
-            }}
-        >
-            <div class="fixed top-4 right-4 flex flex-col gap-2">
-                <WakeLockToggle />
-                <AlarmToggle />
-                <AlarmTimeInput currentTime={currentTime} />
-            </div>
+        <div>
             <AlarmOverlay />
-            <AnalogClock />
+            {/* Clock container - 100vh */}
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100vh",
+                    margin: 0,
+                    padding: 0,
+                    backgroundColor: "#f5f5f5",
+                }}
+            >
+                <AnalogClock />
+            </div>
+
+            {/* Controls section - appears below when scrolled */}
+            <div
+                style={{
+                    backgroundColor: "#ffffff",
+                    padding: "2rem",
+                    minHeight: "30vh",
+                }}
+            >
+                <div class="max-w-md mx-auto flex flex-col gap-4">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-2">
+                        Controls
+                    </h2>
+                    <WakeLockToggle />
+                    <AlarmToggle />
+                    <AlarmTimeInput currentTime={currentTime} />
+                </div>
+            </div>
         </div>
     );
 }
