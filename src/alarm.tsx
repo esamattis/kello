@@ -1,4 +1,5 @@
-import { signal, computed, effect, Signal } from "@preact/signals";
+import { signal, computed, Signal, effect } from "@preact/signals";
+import { ToggleButton } from "./ToggleButton";
 import { useEffect, useRef } from "preact/hooks";
 
 // Dragging state for alarm hand
@@ -266,17 +267,14 @@ export function useAlarmFlash() {
 
 export function AlarmToggle() {
     return (
-        <button
-            onClick={toggleAlarm}
-            class={`w-full px-4 py-4 rounded-full text-sm font-medium transition-colors ${
-                alarmEnabled.value
-                    ? "bg-orange-500 text-white hover:bg-orange-600"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-            title={alarmEnabled.value ? "Alarm is set" : "Alarm is off"}
+        <ToggleButton
+            checked={alarmEnabled.value}
+            checkbox
+            onChange={toggleAlarm}
+            checkedClass="bg-orange-500 text-white hover:bg-orange-600"
         >
-            {alarmEnabled.value ? "⏰ Alarm On" : "🔕 Alarm Off"}
-        </button>
+            ⏰ Herätys päällä
+        </ToggleButton>
     );
 }
 

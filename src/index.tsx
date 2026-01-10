@@ -1,7 +1,8 @@
 import { render } from "preact";
-import { signal, computed } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
+import { signal, Signal, computed } from "@preact/signals";
 import "./style.css";
+import { ToggleButton } from "./ToggleButton";
 import {
     checkAlarm,
     triggerAlarm,
@@ -428,27 +429,18 @@ function WakeLockToggle() {
         <Tooltip
             content={
                 wakeLockEnabled.value
-                    ? "Click to allow the screen to turn off"
-                    : "Click to keep the screen on"
+                    ? "Napsauta salliaksesi näytön sammumisen"
+                    : "Napsauta pitääksesi näytön päällä"
             }
         >
-            <button
-                onClick={toggleWakeLock}
-                class={`w-full px-4 py-4 rounded-full text-sm font-medium transition-colors ${
-                    wakeLockEnabled.value
-                        ? "bg-green-500 text-white hover:bg-green-600"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-                title={
-                    wakeLockEnabled.value
-                        ? "Screen will stay on"
-                        : "Screen may turn off"
-                }
+            <ToggleButton
+                checked={wakeLockEnabled.value}
+                checkbox
+                onChange={toggleWakeLock}
+                checkedClass="bg-green-500 text-white hover:bg-green-600"
             >
-                {wakeLockEnabled.value
-                    ? "🔆 Staying Awake"
-                    : "💤 Allowing Sleep"}
-            </button>
+                🔆 Pidä näyttö päällä
+            </ToggleButton>
         </Tooltip>
     );
 }
@@ -475,21 +467,18 @@ function FullscreenToggle() {
     return (
         <Tooltip
             content={
-                fullscreenEnabled.value ? "Exit fullscreen" : "Enter fullscreen"
+                fullscreenEnabled.value
+                    ? "Poistu koko näytöstä"
+                    : "Siirry koko näyttöön"
             }
         >
-            <button
-                onClick={toggleFullscreen}
-                class={`w-full px-4 py-4 rounded-full text-sm font-medium transition-colors ${
-                    fullscreenEnabled.value
-                        ? "bg-blue-500 text-white hover:bg-blue-600"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
+            <ToggleButton
+                checked={fullscreenEnabled.value}
+                onChange={toggleFullscreen}
+                checkedChildren="🖥️ Poistu koko näytöstä"
             >
-                {fullscreenEnabled.value
-                    ? "🖥️ Exit Fullscreen"
-                    : "⛶ Enter Fullscreen"}
-            </button>
+                ⛶ Koko näyttö
+            </ToggleButton>
         </Tooltip>
     );
 }
