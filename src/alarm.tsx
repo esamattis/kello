@@ -304,34 +304,36 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
     };
 
     return (
-        <div class="flex flex-col gap-1">
-            <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-600">Herätys:</label>
-                <input
-                    type="number"
-                    min="0"
-                    max="11"
-                    value={alarmHours.value}
-                    onInput={handleHoursChange}
-                    class="w-14 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
-                />
-                <span class="text-gray-600">:</span>
-                <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={alarmMinutes.value}
-                    onInput={handleMinutesChange}
-                    class="w-14 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
-                />
-            </div>
-            {timeToNextAlarm.value && (
-                <div class="text-xs text-gray-500">
-                    Soi {timeToNextAlarm.value.hours}h{" "}
-                    {timeToNextAlarm.value.minutes}min{" "}
-                    {timeToNextAlarm.value.seconds}s päästä
+        <div class="w-full px-4 py-4 rounded-full text-sm font-medium bg-gray-200 text-gray-700 flex items-center justify-center">
+            <div class="w-44 flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                    <label class="text-gray-600">Herätys:</label>
+                    <input
+                        type="number"
+                        min="0"
+                        max="11"
+                        value={alarmHours.value}
+                        onInput={handleHoursChange}
+                        class="w-12 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
+                    />
+                    <span class="text-gray-600">:</span>
+                    <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={alarmMinutes.value}
+                        onInput={handleMinutesChange}
+                        class="w-12 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
+                    />
                 </div>
-            )}
+                {timeToNextAlarm.value && (
+                    <div class="text-xs text-gray-500">
+                        Soi {timeToNextAlarm.value.hours}h{" "}
+                        {timeToNextAlarm.value.minutes}min{" "}
+                        {timeToNextAlarm.value.seconds}s päästä
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
