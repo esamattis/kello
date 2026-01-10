@@ -14,7 +14,7 @@ export function Tooltip({
     position = "top",
     class: className = "",
 }: TooltipProps) {
-    const triggerRef = useRef<HTMLButtonElement>(null);
+    const triggerRef = useRef<HTMLSpanElement>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
     const popoverId = useMemo(
         () => `tooltip-${Math.random().toString(36).substring(7)}`,
@@ -95,14 +95,13 @@ export function Tooltip({
 
     return (
         <>
-            <button
+            <span
                 ref={triggerRef}
-                type="button"
                 class={`inline-flex ${className}`}
                 aria-describedby={popoverId}
             >
                 {children}
-            </button>
+            </span>
             <div
                 ref={popoverRef}
                 id={popoverId}
