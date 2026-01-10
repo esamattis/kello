@@ -287,21 +287,20 @@ interface AlarmTimeInputProps {
 export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
     const timeToNextAlarm = computeTimeToNextAlarm(currentTime);
 
-    const handleHoursChange = (e: Event) => {
+    const handleTimeChange = (e: Event) => {
         const target = e.target as HTMLInputElement;
-        const value = parseInt(target.value, 10);
-        if (!isNaN(value)) {
-            setAlarmHours(value);
+        const parts = target.value.split(":");
+        const hours = Number(parts[0]);
+        const minutes = Number(parts[1]);
+        if (!isNaN(hours) && !isNaN(minutes)) {
+            setAlarmHours(hours);
+            setAlarmMinutes(minutes);
         }
     };
 
-    const handleMinutesChange = (e: Event) => {
-        const target = e.target as HTMLInputElement;
-        const value = parseInt(target.value, 10);
-        if (!isNaN(value)) {
-            setAlarmMinutes(value);
-        }
-    };
+    const timeValue =
+        `${String(alarmHours.value).padStart(2, "0")}:` +
+        `${String(alarmMinutes.value).padStart(2, "0")}`;
 
     if (!alarmEnabled.value) {
         return null;
@@ -313,21 +312,10 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
                 <div class="flex items-center gap-2">
                     <label class="text-gray-600">Herätys:</label>
                     <input
-                        type="number"
-                        min="0"
-                        max="11"
-                        value={alarmHours.value}
-                        onInput={handleHoursChange}
-                        class="w-13 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
-                    />
-                    <span class="text-gray-600">:</span>
-                    <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        value={alarmMinutes.value}
-                        onInput={handleMinutesChange}
-                        class="w-13 px-2 py-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
+                        type="time"
+                        value={timeValue}
+                        onInput={handleTimeChange}
+                        class="px-2 py-1 border border-gray-300 rounded text-sm bg-white text-gray-900"
                     />
                 </div>
                 {timeToNextAlarm.value && (
