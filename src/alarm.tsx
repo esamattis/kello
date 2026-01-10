@@ -456,7 +456,7 @@ export function AlarmHand({ svgRef }: AlarmHandProps) {
     );
 }
 
-export function AlarmOverlay() {
+export function AlarmFlashBackground() {
     useEffect(() => {
         if (!alarmTriggered.value) return;
 
@@ -477,7 +477,5 @@ export function AlarmOverlay() {
         return null;
     }
 
-    return (
-        <div class="fixed inset-0 z-40 pointer-events-none alarm-flash-overlay" />
-    );
+    return <div class="fixed inset-0 -z-10 alarm-flash-background" />;
 }

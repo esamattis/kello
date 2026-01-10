@@ -8,10 +8,11 @@ import {
     triggerAlarm,
     AlarmToggle,
     AlarmTimeInput,
-    AlarmOverlay,
+    AlarmFlashBackground,
     AlarmHand,
     alarmEnabled,
     alarmHandDragging,
+    alarmTriggered,
     useAlarmHandDrag,
     computeTimeToNextAlarm,
     alarmTimeFormatted,
@@ -563,7 +564,7 @@ export function App() {
         <div style={{ overflow: "hidden", width: "100%" }}>
             <DigitalClock />
             <AlarmBellIcon />
-            <AlarmOverlay />
+            <AlarmFlashBackground />
             {/* Clock container - 100dvh for mobile landscape support */}
             <div
                 style={{
@@ -574,7 +575,9 @@ export function App() {
                     width: "100%",
                     margin: 0,
                     padding: 0,
-                    backgroundColor: "#f5f5f5",
+                    backgroundColor: alarmTriggered.value
+                        ? "transparent"
+                        : "#f5f5f5",
                     overflow: "hidden",
                 }}
             >
