@@ -7,3 +7,17 @@ html {
     overflow-x: hidden;
     width: 100%;
 }
+
+@keyframes alarm-flash {
+    0%,
+    100% {
+        background-color: rgba(251, 191, 36, 0.3);
+    }
+    50% {
+        background-color: rgba(249, 115, 22, 0.4);
+    }
+}
+
+.alarm-flash-overlay {
+    animation: alarm-flash 1.5s ease-in-out infinite;
+}

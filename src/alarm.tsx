@@ -246,25 +246,6 @@ export function toggleAlarm() {
     }
 }
 
-// Flashing state for alarm
-export const flashState = signal(false);
-
-// Hook to manage flash effect
-export function useAlarmFlash() {
-    useEffect(() => {
-        if (!alarmTriggered.value) {
-            flashState.value = false;
-            return;
-        }
-
-        const flashInterval = setInterval(() => {
-            flashState.value = !flashState.value;
-        }, 500);
-
-        return () => clearInterval(flashInterval);
-    }, [alarmTriggered.value]);
-}
-
 export function AlarmToggle() {
     return (
         <ToggleButton
@@ -475,33 +456,27 @@ export function AlarmHand({ svgRef }: AlarmHandProps) {
 }
 
 export function AlarmOverlay() {
-    useAlarmFlash();
+    useEffect(() => {
+        if (!alarmTriggered.value) return;
+
+        const handleDismiss = () => {
+            dismissAlarm();
+        };
+
+        document.addEventListener("click", handleDismiss);
+        document.addEventListener("touchstart", handleDismiss);
+
+        return () => {
+            document.removeEventListener("click", handleDismiss);
+            document.removeEventListener("touchstart", handleDismiss);
+        };
+    }, [alarmTriggered.value]);
 
     if (!alarmTriggered.value) {
         return null;
     }
 
     return (
-        <div
-            class={`fixed inset-0 flex items-center justify-center z-50 transition-colors ${
-                flashState.value ? "bg-yellow-400" : "bg-orange-500"
-            }`}
-            onClick={dismissAlarm}
-        >
-            <div class="text-center">
-                <div class="text-8xl mb-8">⏰</div>
-                <div class="text-4xl font-bold text-white mb-4">HERÄTYS!</div>
-                <div class="text-2xl text-white mb-8">
-                    {alarmHours.value.toString().padStart(2, "0")}:
-                    {alarmMinutes.value.toString().padStart(2, "0")}
-                </div>
-                <button
-                    onClick={dismissAlarm}
-                    class="px-8 py-4 bg-white text-orange-500 font-bold text-xl rounded-full shadow-lg hover:bg-gray-100 transition-colors"
-                >
-                    Hiljennä
-                </button>
-            </div>
-        </div>
+        <div class="fixed inset-0 z-40 pointer-events-none alarm-flash-overlay" />
     );
 }
