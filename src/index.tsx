@@ -250,9 +250,10 @@ function AnalogClock() {
                 y={y}
                 text-anchor="middle"
                 dominant-baseline="central"
-                font-size="2"
+                font-size="2.5"
                 font-family="Arial, sans-serif"
-                fill="#e53e3e"
+                // fill="#e53e3e" // red
+                fill="#888888"
             >
                 {minute}
             </text>,
