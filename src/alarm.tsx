@@ -1,6 +1,9 @@
 import { signal, computed, effect, Signal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 
+// Dragging state for alarm hand
+export const alarmHandDragging = signal(false);
+
 // Local storage key
 const ALARM_STORAGE_KEY = "kello-alarm-settings";
 
@@ -377,6 +380,7 @@ export function useAlarmHandDrag(svgRef: { current: SVGSVGElement | null }) {
 
     const handleStart = (clientX: number, clientY: number) => {
         isDragging.current = true;
+        alarmHandDragging.value = true;
         const angle = getAngleFromEvent(clientX, clientY);
         if (angle !== null) {
             updateAlarmFromAngle(angle);
@@ -393,6 +397,7 @@ export function useAlarmHandDrag(svgRef: { current: SVGSVGElement | null }) {
 
     const handleEnd = () => {
         isDragging.current = false;
+        alarmHandDragging.value = false;
     };
 
     useEffect(() => {
@@ -461,9 +466,9 @@ export function AlarmHand({ svgRef }: AlarmHandProps) {
                 x1="50"
                 y1="50"
                 x2="50"
-                y2="35"
+                y2={alarmHandDragging.value ? "15" : "35"}
                 stroke="#f97316"
-                stroke-width="1"
+                stroke-width={alarmHandDragging.value ? "2" : "1"}
                 stroke-linecap="round"
                 transform={`rotate(${alarmHandAngle.value} 50 50)`}
             />

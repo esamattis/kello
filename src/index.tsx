@@ -265,9 +265,6 @@ function AnalogClock() {
             {/* 24-hour numbers */}
             {hour24Numbers}
 
-            {/* Alarm hand (only shown when alarm is enabled) */}
-            {alarmEnabled.value && <AlarmHand svgRef={svgRef} />}
-
             {/* Hour hand */}
             <line
                 x1="50"
@@ -303,6 +300,9 @@ function AnalogClock() {
                 stroke-linecap="round"
                 transform={`rotate(${secondsAngle.value} 50 50)`}
             />
+
+            {/* Alarm hand (only shown when alarm is enabled) - rendered last to be on top */}
+            {alarmEnabled.value && <AlarmHand svgRef={svgRef} />}
 
             {/* Center dot */}
             <circle cx="50" cy="50" r="2.5" fill="#222222" />
