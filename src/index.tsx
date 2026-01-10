@@ -453,7 +453,13 @@ function WakeLockToggle() {
 function FullscreenToggle() {
     useEffect(() => {
         const handleFullscreenChange = () => {
+            const wasFullscreen = fullscreenEnabled.value;
             fullscreenEnabled.value = !!document.fullscreenElement;
+
+            // Remove focus from button when exiting fullscreen
+            if (wasFullscreen && !fullscreenEnabled.value) {
+                (document.activeElement as HTMLElement)?.blur?.();
+            }
         };
 
         document.addEventListener("fullscreenchange", handleFullscreenChange);
