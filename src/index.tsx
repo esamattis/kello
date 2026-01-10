@@ -235,6 +235,30 @@ function AnalogClock() {
         );
     }
 
+    // Generate minute numbers (5, 10, 15, etc.) close to the border
+    const minuteNumbers = [];
+    for (let i = 1; i <= 12; i++) {
+        const minute = i * 5;
+        const angle = ((i / 12) * 360 - 90) * (Math.PI / 180);
+        const radius = 45; // Just outside the tick markers
+        const x = 50 + radius * Math.cos(angle);
+        const y = 50 + radius * Math.sin(angle);
+        minuteNumbers.push(
+            <text
+                key={`minute-number-${minute}`}
+                x={x}
+                y={y}
+                text-anchor="middle"
+                dominant-baseline="central"
+                font-size="2"
+                font-family="Arial, sans-serif"
+                fill="#e53e3e"
+            >
+                {minute}
+            </text>,
+        );
+    }
+
     return (
         <svg
             ref={svgRef}
@@ -274,6 +298,9 @@ function AnalogClock() {
 
             {/* 24-hour numbers */}
             {hour24Numbers}
+
+            {/* Minute numbers (5, 10, 15, etc.) */}
+            {minuteNumbers}
 
             {/* Hour hand */}
             <line
