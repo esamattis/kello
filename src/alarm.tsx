@@ -273,7 +273,7 @@ export function AlarmToggle() {
             onChange={toggleAlarm}
             checkedClass="bg-orange-500 text-white hover:bg-orange-600"
         >
-            ⏰ Herätys päällä
+            ⏰ Herätys
         </ToggleButton>
     );
 }
@@ -304,7 +304,7 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
     return (
         <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-600">Alarm:</label>
+                <label class="text-sm text-gray-600">Herätys:</label>
                 <input
                     type="number"
                     min="0"
@@ -325,9 +325,9 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
             </div>
             {timeToNextAlarm.value && (
                 <div class="text-xs text-gray-500">
-                    Next in {timeToNextAlarm.value.hours}h{" "}
-                    {timeToNextAlarm.value.minutes}m{" "}
-                    {timeToNextAlarm.value.seconds}s
+                    Soi {timeToNextAlarm.value.hours}h{" "}
+                    {timeToNextAlarm.value.minutes}min{" "}
+                    {timeToNextAlarm.value.seconds}s päästä
                 </div>
             )}
         </div>
@@ -490,7 +490,7 @@ export function AlarmOverlay() {
         >
             <div class="text-center">
                 <div class="text-8xl mb-8">⏰</div>
-                <div class="text-4xl font-bold text-white mb-4">WAKE UP!</div>
+                <div class="text-4xl font-bold text-white mb-4">HERÄTYS!</div>
                 <div class="text-2xl text-white mb-8">
                     {alarmHours.value.toString().padStart(2, "0")}:
                     {alarmMinutes.value.toString().padStart(2, "0")}
@@ -499,7 +499,7 @@ export function AlarmOverlay() {
                     onClick={dismissAlarm}
                     class="px-8 py-4 bg-white text-orange-500 font-bold text-xl rounded-full shadow-lg hover:bg-gray-100 transition-colors"
                 >
-                    Dismiss
+                    Hiljennä
                 </button>
             </div>
         </div>

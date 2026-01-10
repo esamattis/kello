@@ -34,7 +34,7 @@ const fullscreenSupported = signal(
 
 async function requestWakeLock() {
     if (!wakeLockSupported.value) {
-        alert("Wake Lock API is not supported in this browser.");
+        alert("Wake Lock API ei ole tuettu tässä selaimessa.");
         return;
     }
 
@@ -381,14 +381,14 @@ function AlarmBellIcon() {
                     stroke-linejoin="round"
                 />
             </svg>
-            <Tooltip content="Alarm set time" position="left">
+            <Tooltip content="Herätysaika" position="left">
                 <div class="text-white font-mono text-xs font-bold">
                     {alarmTimeFormatted.value}
                 </div>
             </Tooltip>
 
             {countdown && (
-                <Tooltip content="Time until next alarm" position="left">
+                <Tooltip content="Aika seuraavaan herätykseen" position="left">
                     <div class="text-white font-mono text-[10px] font-bold opacity-80">
                         {countdown.hours.toString().padStart(2, "0")}:
                         {countdown.minutes.toString().padStart(2, "0")}
@@ -475,7 +475,7 @@ function FullscreenToggle() {
             <ToggleButton
                 checked={fullscreenEnabled.value}
                 onChange={toggleFullscreen}
-                checkedChildren="🖥️ Poistu koko näytöstä"
+                checkedChildren="⛶ Poistu koko näytöstä"
             >
                 ⛶ Koko näyttö
             </ToggleButton>
