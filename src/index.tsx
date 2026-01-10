@@ -10,6 +10,7 @@ import {
     AlarmOverlay,
     AlarmHand,
     alarmEnabled,
+    alarmHandDragging,
     useAlarmHandDrag,
     computeTimeToNextAlarm,
     alarmTimeFormatted,
@@ -346,7 +347,12 @@ function AlarmBellIcon() {
     return (
         <div
             class="absolute top-4 right-4 bg-orange-500 bg-opacity-90 p-2 rounded-lg shadow-lg flex flex-col items-center gap-1"
-            style={{ zIndex: 1000 }}
+            style={{
+                zIndex: 1000,
+                transform: alarmHandDragging.value ? "scale(2)" : "scale(1)",
+                transformOrigin: "top right",
+                transition: "transform 0.2s ease-out",
+            }}
             title="Alarm is active"
         >
             <svg
