@@ -223,6 +223,14 @@ export function dismissAlarm() {
     stopAlarmSound();
 }
 
+// Test the alarm for a short duration
+export function testAlarm() {
+    if (alarmTriggered.value) return; // Already triggered
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    alarmTriggered.value = true;
+    playAlarmSound();
+}
+
 // Reset alarm for next day (call when minute changes away from alarm time)
 export function resetAlarmTrigger() {
     if (alarmTriggered.value) return; // Don't reset if still triggered
@@ -257,6 +265,18 @@ export function AlarmToggle() {
         >
             ⏰ Herätys
         </ToggleButton>
+    );
+}
+
+export function AlarmTestButton() {
+    return (
+        <button
+            type="button"
+            onClick={testAlarm}
+            class="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
+        >
+            🔔 Testaa hälytys
+        </button>
     );
 }
 

@@ -16,6 +16,7 @@ import {
     useAlarmHandDrag,
     computeTimeToNextAlarm,
     alarmTimeFormatted,
+    AlarmTestButton,
 } from "./alarm";
 import { Tooltip } from "./Tooltip";
 
@@ -599,7 +600,8 @@ export function App() {
                     <AlarmToggle />
                     <AlarmTimeInput currentTime={currentTime} />
                 </div>
-                <div class="mt-8 text-center">
+                <div class="mt-8 text-center flex flex-col items-center gap-4">
+                    <AlarmTestButton />
                     <a
                         href="https://github.com/esamattis/kello"
                         rel="noopener noreferrer"
