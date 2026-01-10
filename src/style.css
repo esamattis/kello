@@ -21,3 +21,29 @@ html {
 .alarm-flash-overlay {
     animation: alarm-flash 1.5s ease-in-out infinite;
 }
+
+@keyframes hand-tick {
+    0% {
+        transform: rotate(var(--rotation)) translateX(0);
+    }
+    20% {
+        transform: rotate(var(--rotation)) translateX(0.3px);
+    }
+    40% {
+        transform: rotate(var(--rotation)) translateX(-0.2px);
+    }
+    60% {
+        transform: rotate(var(--rotation)) translateX(0.1px);
+    }
+    80% {
+        transform: rotate(var(--rotation)) translateX(-0.05px);
+    }
+    100% {
+        transform: rotate(var(--rotation)) translateX(0);
+    }
+}
+
+.hand-tick {
+    animation: hand-tick 0.15s ease-out;
+    transform-origin: 50px 50px;
+}

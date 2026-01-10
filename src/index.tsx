@@ -91,6 +91,12 @@ const currentTime = signal(new Date());
 // Track last checked minute to avoid re-triggering
 const lastCheckedMinute = signal(-1);
 
+// Signals for tick animation
+const secondTick = signal(false);
+const minuteTick = signal(false);
+const lastSecond = signal(-1);
+const lastMinute = signal(-1);
+
 // Computed signals for clock hands angles
 const secondsAngle = computed(() => {
     const seconds = currentTime.value.getSeconds();
@@ -130,6 +136,26 @@ function AnalogClock() {
     useEffect(() => {
         const interval = setInterval(() => {
             currentTime.value = new Date();
+
+            // Trigger second tick animation
+            const currentSecond = currentTime.value.getSeconds();
+            if (currentSecond !== lastSecond.value) {
+                lastSecond.value = currentSecond;
+                secondTick.value = true;
+                setTimeout(() => {
+                    secondTick.value = false;
+                }, 150);
+            }
+
+            // Trigger minute tick animation
+            const currentMin = currentTime.value.getMinutes();
+            if (currentMin !== lastMinute.value) {
+                lastMinute.value = currentMin;
+                minuteTick.value = true;
+                setTimeout(() => {
+                    minuteTick.value = false;
+                }, 150);
+            }
 
             // Check alarm once per minute
             const currentMinute =
@@ -324,7 +350,12 @@ function AnalogClock() {
                 stroke="#444444"
                 stroke-width="2"
                 stroke-linecap="round"
-                transform={`rotate(${minutesAngle.value} 50 50)`}
+                class={minuteTick.value ? "hand-tick" : ""}
+                style={{
+                    "--rotation": `${minutesAngle.value}deg`,
+                    transform: `rotate(${minutesAngle.value}deg)`,
+                    transformOrigin: "50px 50px",
+                }}
             />
 
             {/* Second hand */}
@@ -336,7 +367,12 @@ function AnalogClock() {
                 stroke="#e53e3e"
                 stroke-width="1"
                 stroke-linecap="round"
-                transform={`rotate(${secondsAngle.value} 50 50)`}
+                class={secondTick.value ? "hand-tick" : ""}
+                style={{
+                    "--rotation": `${secondsAngle.value}deg`,
+                    transform: `rotate(${secondsAngle.value}deg)`,
+                    transformOrigin: "50px 50px",
+                }}
             />
 
             {/* Alarm hand (only shown when alarm is enabled) - rendered last to be on top */}
