@@ -311,12 +311,14 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
             <div class="w-44 flex flex-col gap-1">
                 <div class="flex items-center gap-2">
                     <label class="text-gray-600">Herätys:</label>
-                    <input
-                        type="time"
-                        value={timeValue}
-                        onInput={handleTimeChange}
-                        class="px-2 py-1 border border-gray-300 rounded text-sm bg-white text-gray-900"
-                    />
+                    <div class="relative">
+                        <input
+                            type="time"
+                            value={timeValue}
+                            onInput={handleTimeChange}
+                            class="w-28 pl-2 pr-7 py-1 border border-gray-300 rounded text-sm bg-white text-gray-900"
+                        />
+                    </div>
                 </div>
                 {timeToNextAlarm.value && (
                     <div class="text-xs text-gray-500">
