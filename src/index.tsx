@@ -87,14 +87,12 @@ const lastCheckedMinute = signal(-1);
 // Computed signals for clock hands angles
 const secondsAngle = computed(() => {
     const seconds = currentTime.value.getSeconds();
-    const milliseconds = currentTime.value.getMilliseconds();
-    return ((seconds + milliseconds / 1000) / 60) * 360;
+    return (seconds / 60) * 360;
 });
 
 const minutesAngle = computed(() => {
     const minutes = currentTime.value.getMinutes();
-    const seconds = currentTime.value.getSeconds();
-    return ((minutes + seconds / 60) / 60) * 360;
+    return (minutes / 60) * 360;
 });
 
 const hoursAngle = computed(() => {
