@@ -219,6 +219,7 @@ export function triggerAlarm() {
 // Dismiss the alarm
 export function dismissAlarm() {
     alarmTriggered.value = false;
+    alarmEnabled.value = false;
     stopAlarmSound();
 }
 
