@@ -32,7 +32,10 @@ const fullscreenSupported = signal(
 );
 
 async function requestWakeLock() {
-    if (!wakeLockSupported.value) return;
+    if (!wakeLockSupported.value) {
+        alert("Wake Lock API is not supported in this browser.");
+        return;
+    }
 
     wakeLockSentinel = await navigator.wakeLock.request("screen");
     wakeLockEnabled.value = true;
