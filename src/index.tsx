@@ -38,7 +38,14 @@ async function requestWakeLock() {
         return;
     }
 
-    wakeLockSentinel = await navigator.wakeLock.request("screen");
+    try {
+        wakeLockSentinel = await navigator.wakeLock.request("screen");
+    } catch (err) {
+        console.error("Wake Lock -pyyntö epäonnistui:", err);
+        alert("Wake Lock -pyyntö epäonnistui.");
+        return;
+    }
+
     wakeLockEnabled.value = true;
 
     wakeLockSentinel.addEventListener("release", () => {
