@@ -17,6 +17,8 @@ import {
     computeTimeToNextAlarm,
     alarmTimeFormatted,
     AlarmTestButton,
+    checkPreAlarm,
+    playPreAlarmDing,
 } from "./alarm";
 import { Tooltip } from "./Tooltip";
 
@@ -168,6 +170,12 @@ function AnalogClock() {
 
                 if (checkAlarm(currentTime.value)) {
                     triggerAlarm();
+                }
+
+                // Check pre-alarm notifications
+                const minutesRemaining = checkPreAlarm(currentTime.value);
+                if (minutesRemaining) {
+                    playPreAlarmDing(minutesRemaining);
                 }
             }
         }, 50);
@@ -452,7 +460,7 @@ function AlarmBellIcon() {
                     stroke-linejoin="round"
                 />
             </svg>
-            <Tooltip content="Herätysaika" position="left">
+            <Tooltip content="Hälytysaika" position="left">
                 <div class="text-white font-mono text-xs font-bold">
                     {alarmTimeFormatted.value}
                 </div>
@@ -462,7 +470,8 @@ function AlarmBellIcon() {
                 <Tooltip content="Aika seuraavaan herätykseen" position="left">
                     <div class="text-white font-mono text-[10px] font-bold opacity-80">
                         {countdown.hours.toString().padStart(2, "0")}:
-                        {countdown.minutes.toString().padStart(2, "0")}
+                        {countdown.minutes.toString().padStart(2, "0")}:
+                        {countdown.seconds.toString().padStart(2, "0")}
                     </div>
                 </Tooltip>
             )}
@@ -615,4 +624,8 @@ export function App() {
     );
 }
 
-render(<App />, document.getElementById("app")!);
+window.addEventListener("load", () => {
+    // https://stackoverflow.com/q/22812303/153718
+    window.speechSynthesis.getVoices();
+    render(<App />, document.getElementById("app")!);
+});

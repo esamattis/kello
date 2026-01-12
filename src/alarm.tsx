@@ -1,62 +1,24 @@
-import { signal, computed, Signal, effect } from "@preact/signals";
+import { signal, computed, Signal } from "@preact/signals";
 import { ToggleButton } from "./ToggleButton";
+import { Tooltip } from "./Tooltip";
 import { useEffect, useRef } from "preact/hooks";
+import { urlSignal } from "./utils";
 
 // Dragging state for alarm hand
 export const alarmHandDragging = signal(false);
 
-// Local storage key
-const ALARM_STORAGE_KEY = "kello-alarm-settings";
-
-// Default alarm settings (hours now 0-11)
-const DEFAULT_SETTINGS = { enabled: false, hours: 7, minutes: 0 };
-
-// Load saved alarm settings from localStorage
-function loadAlarmSettings(): {
-    enabled: boolean;
-    hours: number;
-    minutes: number;
-} {
-    const saved = localStorage.getItem(ALARM_STORAGE_KEY);
-    if (!saved) {
-        return DEFAULT_SETTINGS;
-    }
-    // Parsing external data requires error handling
-    try {
-        const result = JSON.parse(saved) as Record<string, unknown> | null;
-        if (!result || typeof result !== "object") {
-            return DEFAULT_SETTINGS;
-        }
-        const hours = typeof result.hours === "number" ? result.hours % 12 : 7;
-        return {
-            enabled:
-                typeof result.enabled === "boolean" ? result.enabled : false,
-            hours: hours,
-            minutes: typeof result.minutes === "number" ? result.minutes : 0,
-        };
-    } catch {
-        return DEFAULT_SETTINGS;
-    }
-}
-
-// Initialize signals with saved values
-const savedSettings = loadAlarmSettings();
-
 // Alarm state (hours stored as 0-11)
-export const alarmEnabled = signal(savedSettings.enabled);
-export const alarmHours = signal(savedSettings.hours);
-export const alarmMinutes = signal(savedSettings.minutes);
+export const alarmEnabled = urlSignal<boolean>("alarmEnabled", false);
+export const alarmHours = urlSignal<number>("alarmHours", 7);
+export const alarmMinutes = urlSignal<number>("alarmMinutes", 0);
+export const preAlarmEnabled = urlSignal<boolean>("preAlarmEnabled", false);
+export const preAlarmInterval = urlSignal<number>("preAlarmInterval", 5);
 export const alarmTriggered = signal(false);
 
-// Save alarm settings to localStorage whenever they change
-effect(() => {
-    const settings = {
-        enabled: alarmEnabled.value,
-        hours: alarmHours.value,
-        minutes: alarmMinutes.value,
-    };
-    localStorage.setItem(ALARM_STORAGE_KEY, JSON.stringify(settings));
-});
+// Export preAlarmEnabled as a type-safe function for use in components
+export const togglePreAlarm = () => {
+    preAlarmEnabled.value = !preAlarmEnabled.value;
+};
 
 // Audio context for alarm sound
 let audioContext: AudioContext | null = null;
@@ -70,6 +32,24 @@ export const alarmTimeFormatted = computed(() => {
     return `${h}:${m}`;
 });
 
+function computeMinutesUntilAlarm(currentTime: Date): number {
+    const currentHours = currentTime.getHours();
+    const currentMinutes = currentTime.getMinutes();
+    const currentTotalMinutes = currentHours * 60 + currentMinutes;
+
+    const alarmTotalMinutes1 = alarmHours.value * 60 + alarmMinutes.value;
+    const alarmTotalMinutes2 =
+        (alarmHours.value + 12) * 60 + alarmMinutes.value;
+
+    if (currentTotalMinutes < alarmTotalMinutes1) {
+        return alarmTotalMinutes1 - currentTotalMinutes;
+    } else if (currentTotalMinutes < alarmTotalMinutes2) {
+        return alarmTotalMinutes2 - currentTotalMinutes;
+    } else {
+        return 24 * 60 - currentTotalMinutes + alarmTotalMinutes1;
+    }
+}
+
 // Computed signal for time until next alarm
 export function computeTimeToNextAlarm(currentTime: Signal<Date>) {
     return computed(() => {
@@ -78,38 +58,9 @@ export function computeTimeToNextAlarm(currentTime: Signal<Date>) {
         }
 
         const now = currentTime.value;
-        const currentHours = now.getHours();
-        const currentMinutes = now.getMinutes();
         const currentSeconds = now.getSeconds();
-
-        // Convert current time to minutes since midnight
-        const currentTotalMinutes = currentHours * 60 + currentMinutes;
-        const currentTotalSeconds = currentTotalMinutes * 60 + currentSeconds;
-
-        // Calculate next alarm occurrences in 24h format
-        const alarmTotalMinutes1 = alarmHours.value * 60 + alarmMinutes.value;
-        const alarmTotalMinutes2 =
-            (alarmHours.value + 12) * 60 + alarmMinutes.value;
-
-        // Convert to seconds
-        const alarmTotalSeconds1 = alarmTotalMinutes1 * 60;
-        const alarmTotalSeconds2 = alarmTotalMinutes2 * 60;
-
-        // Find the next alarm time
-        let secondsUntilAlarm: number;
-
-        if (currentTotalSeconds < alarmTotalSeconds1) {
-            // Next alarm is today at first occurrence
-            secondsUntilAlarm = alarmTotalSeconds1 - currentTotalSeconds;
-        } else if (currentTotalSeconds < alarmTotalSeconds2) {
-            // Next alarm is today at second occurrence
-            secondsUntilAlarm = alarmTotalSeconds2 - currentTotalSeconds;
-        } else {
-            // Next alarm is tomorrow at first occurrence
-            const secondsInDay = 24 * 60 * 60;
-            secondsUntilAlarm =
-                secondsInDay - currentTotalSeconds + alarmTotalSeconds1;
-        }
+        const minutesUntilAlarm = computeMinutesUntilAlarm(now);
+        const secondsUntilAlarm = minutesUntilAlarm * 60 - currentSeconds;
 
         const hours = Math.floor(secondsUntilAlarm / 3600);
         const minutes = Math.floor((secondsUntilAlarm % 3600) / 60);
@@ -148,6 +99,7 @@ export function playAlarmSound() {
     if (audioContext) return; // Already playing
 
     audioContext = new AudioContext();
+    audioContext.resume();
     gainNode = audioContext.createGain();
     gainNode.connect(audioContext.destination);
     gainNode.gain.setValueAtTime(1, audioContext.currentTime);
@@ -210,6 +162,146 @@ export function stopAlarmSound() {
     }
 }
 
+function playDing() {
+    return new Promise<void>((resolve) => {
+        const ctx = new AudioContext();
+        ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(ctx.currentTime);
+        const duration = 800;
+        osc.stop(ctx.currentTime + duration / 1000);
+
+        setTimeout(() => {
+            ctx.close();
+            resolve();
+        }, duration);
+    });
+}
+
+function getFinnishVoice(): SpeechSynthesisVoice | null {
+    const voices = window.speechSynthesis.getVoices();
+    return voices.find((v) => v.lang.startsWith("fi-")) || null;
+}
+
+function speakMessage(
+    text: string,
+    lang: string,
+    voice: SpeechSynthesisVoice | null,
+): Promise<void> {
+    return new Promise<void>((resolve) => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        if (voice) {
+            utterance.voice = voice;
+        }
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 0.7;
+        utterance.onend = () => resolve();
+        utterance.onerror = () => resolve();
+        window.speechSynthesis.speak(utterance);
+    });
+}
+
+async function waitForVoicesLoaded(): Promise<void> {
+    await new Promise<void>((resolve) => {
+        const done = () => {
+            clearTimeout(timeout);
+            window.speechSynthesis.removeEventListener("voiceschanged", done);
+            resolve();
+        };
+
+        const timeout = setTimeout(done, 1000);
+        window.speechSynthesis.addEventListener("voiceschanged", done);
+    });
+}
+
+export async function playPreAlarmDing(minutesRemaining: number) {
+    await playDing();
+    if (!("speechSynthesis" in window) || !window.speechSynthesis) {
+        return;
+    }
+
+    const hours = Math.floor(minutesRemaining / 60);
+    const minutes = minutesRemaining % 60;
+
+    let finnishVoice = getFinnishVoice();
+
+    if (!finnishVoice) {
+        // getVoices() might be initially empty, wait for them to load
+        await waitForVoicesLoaded();
+        finnishVoice = getFinnishVoice();
+    }
+
+    if (finnishVoice) {
+        let message: string;
+        if (hours > 0 && minutes > 0) {
+            const hourWord = hours === 1 ? "tunti" : "tuntia";
+            message = `${hours} ${hourWord} ja ${minutes} minuuttia jäljellä`;
+        } else if (hours > 0) {
+            const hourWord = hours === 1 ? "tunti" : "tuntia";
+            message = `${hours} ${hourWord} jäljellä`;
+        } else {
+            message = `${minutes} minuuttia jäljellä`;
+        }
+        await speakMessage(message, "fi-FI", finnishVoice);
+    } else {
+        let message: string;
+        if (hours > 0 && minutes > 0) {
+            const hourWord = hours === 1 ? "hour" : "hours";
+            message = `${hours} ${hourWord} and ${minutes} minutes remaining`;
+        } else if (hours > 0) {
+            const hourWord = hours === 1 ? "hour" : "hours";
+            message = `${hours} ${hourWord} remaining`;
+        } else {
+            message = `${minutes} minutes remaining`;
+        }
+        await speakMessage(message, "en-US", null);
+    }
+}
+
+// Track last pre-alarm notification minute to avoid re-triggering
+const lastPreAlarmMinute = signal(-1);
+
+// Export lastPreAlarmMinute for testing
+export { lastPreAlarmMinute };
+
+export function checkPreAlarm(currentTime: Date): number | false {
+    if (!preAlarmEnabled.value || !alarmEnabled.value || alarmTriggered.value) {
+        return false;
+    }
+
+    const currentHours = currentTime.getHours();
+    const currentMinutes = currentTime.getMinutes();
+    const currentTotalMinutes = currentHours * 60 + currentMinutes;
+
+    const minutesUntilAlarm = computeMinutesUntilAlarm(currentTime);
+
+    if (
+        minutesUntilAlarm > 0 &&
+        minutesUntilAlarm % preAlarmInterval.value === 0
+    ) {
+        if (currentTotalMinutes !== lastPreAlarmMinute.value) {
+            lastPreAlarmMinute.value = currentTotalMinutes;
+            return minutesUntilAlarm;
+        }
+    }
+
+    return false;
+}
+
 // Trigger the alarm
 export function triggerAlarm() {
     alarmTriggered.value = true;
@@ -229,6 +321,13 @@ export function testAlarm() {
     window.scrollTo({ top: 0, behavior: "smooth" });
     alarmTriggered.value = true;
     playAlarmSound();
+}
+
+// Test the pre-alarm notification
+export function testPreAlarm() {
+    const currentTime = new Date();
+    const minutesUntilAlarm = computeMinutesUntilAlarm(currentTime);
+    playPreAlarmDing(minutesUntilAlarm);
 }
 
 // Reset alarm for next day (call when minute changes away from alarm time)
@@ -263,7 +362,7 @@ export function AlarmToggle() {
             onChange={toggleAlarm}
             checkedClass="bg-orange-500 text-white hover:bg-orange-600"
         >
-            ⏰ Herätys
+            ⏰ Hälytys
         </ToggleButton>
     );
 }
@@ -298,6 +397,14 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
         }
     };
 
+    const handleIntervalChange = (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        const value = Number(target.value);
+        if (!isNaN(value) && value >= 1) {
+            preAlarmInterval.value = value;
+        }
+    };
+
     const timeValue =
         `${String(alarmHours.value).padStart(2, "0")}:` +
         `${String(alarmMinutes.value).padStart(2, "0")}`;
@@ -320,6 +427,10 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
                         />
                     </div>
                 </div>
+                <div class="text-[10px] text-gray-500 italic">
+                    Voit sää&shy;tää he&shy;rä&shy;tys&shy;tä myös
+                    ve&shy;tä&shy;mäl&shy;lä vii&shy;sa&shy;ria
+                </div>
                 {timeToNextAlarm.value && (
                     <div class="text-xs text-gray-500">
                         {timeToNextAlarm.value.hours}h{" "}
@@ -327,10 +438,51 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
                         {timeToNextAlarm.value.seconds}s päästä
                     </div>
                 )}
-                <div class="text-[10px] text-gray-500 italic">
-                    Voit sää&shy;tää he&shy;rä&shy;tys&shy;tä myös
-                    ve&shy;tä&shy;mäl&shy;lä vii&shy;sa&shy;ria
+                <div class="flex mt-5 items-center gap-2">
+                    <input
+                        type="checkbox"
+                        id="pre-alarm"
+                        checked={preAlarmEnabled.value}
+                        onChange={togglePreAlarm}
+                        class="w-4 h-4"
+                    />
+                    <label
+                        for="pre-alarm"
+                        class="text-xs text-gray-600 cursor-pointer"
+                    >
+                        Väliaikaviestit
+                    </label>
+                    {preAlarmEnabled.value && (
+                        <Tooltip
+                            content="Testaa väliaikaviesti"
+                            position="right"
+                        >
+                            <button
+                                type="button"
+                                onClick={testPreAlarm}
+                                class="px-2 py-1 text-xs bg-gray-300 hover:bg-gray-400 text-gray-700 rounded transition-colors"
+                            >
+                                🔊
+                            </button>
+                        </Tooltip>
+                    )}
                 </div>
+                {preAlarmEnabled.value && (
+                    <div class="flex items-center gap-2">
+                        <select
+                            value={preAlarmInterval.value}
+                            onInput={handleIntervalChange}
+                            class="w-20 pl-2 pr-6 py-1 border border-gray-300 rounded text-xs bg-white text-gray-900"
+                        >
+                            {Array.from({ length: 60 }, (_, i) => i + 1).map(
+                                (value) => (
+                                    <option value={value}>{value}</option>
+                                ),
+                            )}
+                        </select>
+                        <label class="text-xs text-gray-600">min välein</label>
+                    </div>
+                )}
             </div>
         </div>
     );
