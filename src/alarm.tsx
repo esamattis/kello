@@ -208,7 +208,7 @@ function setVoice() {
         fiVoices.find((v) => v.name.toLowerCase().includes("satu")) ||
         fiVoices[0] ||
         enVoices[0] ||
-        null;
+        voice.value;
 
     console.log("Selected voice:", voice.value);
 }
@@ -228,6 +228,7 @@ function speakMessage(text: string): Promise<void> {
         const utterance = new SpeechSynthesisUtterance(text);
         console.log("usinng voice", voice.value);
         utterance.voice = voice.value;
+        utterance.lang = voice.value?.lang || "en-US";
         utterance.rate = 1;
         utterance.pitch = 1;
         utterance.volume = 0.7;
