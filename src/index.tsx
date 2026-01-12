@@ -1,5 +1,5 @@
 import { render } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { signal, Signal, computed } from "@preact/signals";
 import "./style.css";
 import { ToggleButton } from "./ToggleButton";
@@ -569,6 +569,107 @@ function FullscreenToggle() {
     );
 }
 
+function VoiceDebug() {
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const refreshVoices = () => {
+        const newVoices = window.speechSynthesis.getVoices();
+        setVoices(newVoices);
+        setRefreshKey((prev) => prev + 1);
+    };
+
+    useEffect(() => {
+        refreshVoices();
+
+        const handleVoicesChanged = () => {
+            alert("Voices changed event detected");
+            refreshVoices();
+        };
+
+        window.speechSynthesis.addEventListener(
+            "voiceschanged",
+            handleVoicesChanged,
+        );
+
+        return () => {
+            window.speechSynthesis.removeEventListener(
+                "voiceschanged",
+                handleVoicesChanged,
+            );
+        };
+    }, []);
+
+    return (
+        <div class="min-h-screen bg-white p-4 text-gray-900">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        Äänet ({voices.length})
+                    </h1>
+                    <button
+                        onClick={refreshVoices}
+                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                        Päivitä äänet
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    {voices.map((voice, index) => (
+                        <div
+                            key={`${voice.name}-${index}-${refreshKey}`}
+                            class="border border-gray-300 p-4 rounded-lg bg-white"
+                        >
+                            <div class="font-semibold text-lg mb-2 text-gray-900">
+                                {voice.name}
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
+                                <div>
+                                    <span class="font-medium text-gray-900">
+                                        Kieli:
+                                    </span>{" "}
+                                    {voice.lang}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-gray-900">
+                                        Oletus:
+                                    </span>{" "}
+                                    {voice.default ? "Kyllä" : "Ei"}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-gray-900">
+                                        Paikallinen:
+                                    </span>{" "}
+                                    {voice.localService ? "Kyllä" : "Ei"}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-gray-900">
+                                        URI:
+                                    </span>{" "}
+                                    {voice.voiceURI || "Ei saatavilla"}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    {voices.length === 0 && (
+                        <div class="text-gray-500 text-center py-8">
+                            Ei ääniä saatavilla
+                        </div>
+                    )}
+                </div>
+                <div class="mt-8 pt-8 border-t border-gray-200 text-center">
+                    <a
+                        href=""
+                        class="text-gray-600 hover:text-gray-900 text-sm"
+                    >
+                        Takaisin
+                    </a>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function App() {
     return (
         <div style={{ overflow: "hidden", width: "100%" }}>
@@ -618,6 +719,12 @@ export function App() {
                     >
                         GitHub
                     </a>
+                    <a
+                        href="?debug=voices"
+                        class="text-gray-600 hover:text-gray-900 text-sm"
+                    >
+                        Debug-näkymä
+                    </a>
                 </div>
             </div>
         </div>
@@ -627,5 +734,11 @@ export function App() {
 window.addEventListener("load", () => {
     // https://stackoverflow.com/q/22812303/153718
     window.speechSynthesis.getVoices();
-    render(<App />, document.getElementById("app")!);
+    const params = new URLSearchParams(window.location.search);
+    const showVoiceDebug = params.get("debug") === "voices";
+    if (showVoiceDebug) {
+        render(<VoiceDebug />, document.getElementById("app")!);
+    } else {
+        render(<App />, document.getElementById("app")!);
+    }
 });
