@@ -14,6 +14,7 @@ export const alarmMinutes = urlSignal<number>("alarmMinutes", 0);
 export const preAlarmEnabled = urlSignal<boolean>("preAlarmEnabled", false);
 export const preAlarmInterval = urlSignal<number>("preAlarmInterval", 5);
 export const alarmTriggered = signal(false);
+export const voice = signal<SpeechSynthesisVoice | null>(null);
 
 // Export preAlarmEnabled as a type-safe function for use in components
 export const togglePreAlarm = () => {
@@ -190,40 +191,49 @@ function playDing() {
     });
 }
 
-function getFinnishVoice(): SpeechSynthesisVoice | null {
+function setVoice() {
     const voices = window.speechSynthesis.getVoices();
-    return voices.find((v) => v.lang.startsWith("fi-")) || null;
+
+    console.log(`Found ${voices.length} speech synthesis voices:`, voices);
+
+    const fiVoices = voices.filter(
+        (v) => v.lang.startsWith("fi-") || v.lang.startsWith("fi_"),
+    );
+
+    const enVoices = voices.filter(
+        (v) => v.lang.startsWith("en-") || v.lang.startsWith("en_"),
+    );
+
+    voice.value =
+        fiVoices.find((v) => v.name.toLowerCase().includes("satu")) ||
+        fiVoices[0] ||
+        enVoices[0] ||
+        null;
+
+    console.log("Selected voice:", voice.value);
 }
 
-function speakMessage(
-    text: string,
-    voice: SpeechSynthesisVoice | null,
-): Promise<void> {
+setVoice();
+
+window.speechSynthesis.removeEventListener("voiceschanged", () => {
+    setVoice();
+});
+
+window.addEventListener("load", () => {
+    setVoice();
+});
+
+function speakMessage(text: string): Promise<void> {
     return new Promise<void>((resolve) => {
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = voice?.lang ?? "en-US";
-        if (voice) {
-            utterance.voice = voice;
-        }
+        console.log("usinng voice", voice.value);
+        utterance.voice = voice.value;
         utterance.rate = 1;
         utterance.pitch = 1;
         utterance.volume = 0.7;
         utterance.onend = () => resolve();
         utterance.onerror = () => resolve();
         window.speechSynthesis.speak(utterance);
-    });
-}
-
-async function waitForVoicesLoaded(): Promise<void> {
-    await new Promise<void>((resolve) => {
-        const done = () => {
-            clearTimeout(timeout);
-            window.speechSynthesis.removeEventListener("voiceschanged", done);
-            resolve();
-        };
-
-        const timeout = setTimeout(done, 1000);
-        window.speechSynthesis.addEventListener("voiceschanged", done);
     });
 }
 
@@ -236,15 +246,7 @@ export async function playPreAlarmDing(minutesRemaining: number) {
     const hours = Math.floor(minutesRemaining / 60);
     const minutes = minutesRemaining % 60;
 
-    let finnishVoice = getFinnishVoice();
-
-    if (!finnishVoice) {
-        // getVoices() might be initially empty, wait for them to load
-        await waitForVoicesLoaded();
-        finnishVoice = getFinnishVoice();
-    }
-
-    if (finnishVoice) {
+    if (voice.value?.lang.startsWith("fi")) {
         let message: string;
         if (hours > 0 && minutes > 0) {
             const hourWord = hours === 1 ? "tunti" : "tuntia";
@@ -255,7 +257,7 @@ export async function playPreAlarmDing(minutesRemaining: number) {
         } else {
             message = `${minutes} minuuttia jäljellä`;
         }
-        await speakMessage(message, finnishVoice);
+        await speakMessage(message);
     } else {
         let message: string;
         if (hours > 0 && minutes > 0) {
@@ -267,7 +269,7 @@ export async function playPreAlarmDing(minutesRemaining: number) {
         } else {
             message = `${minutes} minutes remaining`;
         }
-        await speakMessage(message, null);
+        await speakMessage(message);
     }
 }
 
@@ -461,7 +463,12 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
                                 onClick={testPreAlarm}
                                 class="px-2 py-1 text-xs bg-gray-300 hover:bg-gray-400 text-gray-700 rounded transition-colors"
                             >
-                                🔊
+                                🔊{" "}
+                                <span class="text-[10px]">
+                                    {voice.value
+                                        ? `${voice.value.name} (${voice.value.lang})`
+                                        : "Ei ääntä?"}
+                                </span>
                             </button>
                         </Tooltip>
                     )}

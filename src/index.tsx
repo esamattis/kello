@@ -579,6 +579,13 @@ function VoiceDebug() {
         setRefreshKey((prev) => prev + 1);
     };
 
+    const testVoice = (voice: SpeechSynthesisVoice) => {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance("Tämä on äänitesti");
+        utterance.voice = voice;
+        window.speechSynthesis.speak(utterance);
+    };
+
     useEffect(() => {
         refreshVoices();
 
@@ -613,57 +620,67 @@ function VoiceDebug() {
                     >
                         Päivitä äänet
                     </button>
+                    <button
+                        onClick={() => (document.location.href = "/")}
+                        class="px-4 py-2 bg-red-700 text-white rounded hover:bg-red-300"
+                    >
+                        Takaisin
+                    </button>
                 </div>
                 <div class="space-y-3">
-                    {voices.map((voice, index) => (
-                        <div
-                            key={`${voice.name}-${index}-${refreshKey}`}
-                            class="border border-gray-300 p-4 rounded-lg bg-white"
-                        >
-                            <div class="font-semibold text-lg mb-2 text-gray-900">
-                                {voice.name}
+                    {[...voices]
+                        .sort((a, b) => {
+                            const langCompare = a.lang.localeCompare(b.lang);
+                            if (langCompare !== 0) return langCompare;
+                            return a.name.localeCompare(b.name);
+                        })
+                        .map((voice, index) => (
+                            <div
+                                key={`${voice.name}-${index}-${refreshKey}`}
+                                class="border border-gray-300 p-4 rounded-lg bg-white"
+                            >
+                                <div class="font-semibold text-lg mb-2 text-gray-900">
+                                    {voice.name}
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
+                                    <div>
+                                        <span class="font-medium text-gray-900">
+                                            Kieli:
+                                        </span>{" "}
+                                        {voice.lang}
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-900">
+                                            Oletus:
+                                        </span>{" "}
+                                        {voice.default ? "Kyllä" : "Ei"}
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-900">
+                                            Paikallinen:
+                                        </span>{" "}
+                                        {voice.localService ? "Kyllä" : "Ei"}
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-900">
+                                            URI:
+                                        </span>{" "}
+                                        {voice.voiceURI || "Ei saatavilla"}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => testVoice(voice)}
+                                    class="mt-3 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                                >
+                                    Testaa ääntä
+                                </button>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
-                                <div>
-                                    <span class="font-medium text-gray-900">
-                                        Kieli:
-                                    </span>{" "}
-                                    {voice.lang}
-                                </div>
-                                <div>
-                                    <span class="font-medium text-gray-900">
-                                        Oletus:
-                                    </span>{" "}
-                                    {voice.default ? "Kyllä" : "Ei"}
-                                </div>
-                                <div>
-                                    <span class="font-medium text-gray-900">
-                                        Paikallinen:
-                                    </span>{" "}
-                                    {voice.localService ? "Kyllä" : "Ei"}
-                                </div>
-                                <div>
-                                    <span class="font-medium text-gray-900">
-                                        URI:
-                                    </span>{" "}
-                                    {voice.voiceURI || "Ei saatavilla"}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
                     {voices.length === 0 && (
                         <div class="text-gray-500 text-center py-8">
                             Ei ääniä saatavilla
                         </div>
                     )}
-                </div>
-                <div class="mt-8 pt-8 border-t border-gray-200 text-center">
-                    <a
-                        href=""
-                        class="text-gray-600 hover:text-gray-900 text-sm"
-                    >
-                        Takaisin
-                    </a>
                 </div>
             </div>
         </div>
