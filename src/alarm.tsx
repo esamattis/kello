@@ -197,12 +197,11 @@ function getFinnishVoice(): SpeechSynthesisVoice | null {
 
 function speakMessage(
     text: string,
-    lang: string,
     voice: SpeechSynthesisVoice | null,
 ): Promise<void> {
     return new Promise<void>((resolve) => {
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = lang;
+        utterance.lang = voice?.lang ?? "en-US";
         if (voice) {
             utterance.voice = voice;
         }
@@ -256,7 +255,7 @@ export async function playPreAlarmDing(minutesRemaining: number) {
         } else {
             message = `${minutes} minuuttia jäljellä`;
         }
-        await speakMessage(message, "fi-FI", finnishVoice);
+        await speakMessage(message, finnishVoice);
     } else {
         let message: string;
         if (hours > 0 && minutes > 0) {
@@ -268,7 +267,7 @@ export async function playPreAlarmDing(minutesRemaining: number) {
         } else {
             message = `${minutes} minutes remaining`;
         }
-        await speakMessage(message, "en-US", null);
+        await speakMessage(message, null);
     }
 }
 
