@@ -618,6 +618,13 @@ function FullscreenToggle() {
             const wasFullscreen = fullscreenEnabled.value;
             fullscreenEnabled.value = !!document.fullscreenElement;
 
+            // Activate wake lock automatically when entering fullscreen
+            if (!wasFullscreen && fullscreenEnabled.value) {
+                if (wakeLockSupported.value && !wakeLockEnabled.value) {
+                    requestWakeLock();
+                }
+            }
+
             // Remove focus from button when exiting fullscreen
             if (wasFullscreen && !fullscreenEnabled.value) {
                 (document.activeElement as HTMLElement)?.blur?.();
