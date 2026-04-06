@@ -11,8 +11,8 @@ export const alarmHandDragging = signal(false);
 
 // Alarm state (hours stored as 0-11)
 export const alarmEnabled = urlSignal<boolean>("alarmEnabled", false);
-export const alarmHours = urlSignal<number>("alarmHours", 7);
-export const alarmMinutes = urlSignal<number>("alarmMinutes", 0);
+export const alarmHours = urlSignal<number>("alarmHours", 8);
+export const alarmMinutes = urlSignal<number>("alarmMinutes", 30);
 export const preAlarmEnabled = urlSignal<boolean>("preAlarmEnabled", false);
 export const preAlarmInterval = urlSignal<number>("preAlarmInterval", 5);
 export const alarmTriggered = signal(false);
