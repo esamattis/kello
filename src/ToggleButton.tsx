@@ -17,15 +17,17 @@ export function ToggleButton({
     checkedChildren,
     onChange,
     checkedClass = "bg-blue-500 text-white hover:bg-blue-600",
-    uncheckedClass = "bg-gray-200 text-gray-700 hover:bg-gray-300",
+    uncheckedClass = "toggle-unchecked",
 }: ToggleButtonProps) {
     const displayContent =
         checked && checkedChildren ? checkedChildren : children;
+    const baseClass =
+        "w-full px-4 py-4 rounded-full text-sm font-medium transition-colors";
 
     if (checkbox) {
         return (
             <label
-                class={`w-full px-4 py-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                class={`${baseClass} flex items-center justify-center cursor-pointer ${
                     checked ? checkedClass : uncheckedClass
                 }`}
             >
@@ -60,9 +62,7 @@ export function ToggleButton({
     return (
         <button
             onClick={onChange}
-            class={`w-full px-4 py-4 rounded-full text-sm font-medium transition-colors ${
-                checked ? checkedClass : uncheckedClass
-            }`}
+            class={`${baseClass} ${checked ? checkedClass : uncheckedClass}`}
         >
             {displayContent}
         </button>

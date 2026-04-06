@@ -374,7 +374,7 @@ export function AlarmTestButton() {
         <button
             type="button"
             onClick={testAlarm}
-            class="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
+            class="themed-secondary-button px-4 py-2 text-sm rounded transition-colors"
         >
             🔔 Testaa hälytys
         </button>
@@ -416,25 +416,25 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
     }
 
     return (
-        <div class="w-full px-4 py-4 rounded-full text-sm font-medium bg-gray-200 text-gray-700 flex items-center justify-center">
+        <div class="themed-input-shell w-full px-4 py-4 rounded-full text-sm font-medium flex items-center justify-center">
             <div class="w-44 flex flex-col gap-1">
                 <div class="flex items-center gap-2">
-                    <label class="text-gray-600">Herätys:</label>
+                    <label class="themed-muted-text">Herätys:</label>
                     <div class="relative">
                         <input
                             type="time"
                             value={timeValue}
                             onInput={handleTimeChange}
-                            class="w-28 pl-2 pr-7 py-1 border border-gray-300 rounded text-sm bg-white text-gray-900"
+                            class="themed-field w-28 pl-2 pr-7 py-1 rounded text-sm"
                         />
                     </div>
                 </div>
-                <div class="text-[10px] text-gray-500 italic">
+                <div class="text-[10px] italic themed-subtle-text">
                     Voit sää&shy;tää he&shy;rä&shy;tys&shy;tä myös
                     ve&shy;tä&shy;mäl&shy;lä vii&shy;sa&shy;ria
                 </div>
                 {timeToNextAlarm.value && (
-                    <div class="text-xs text-gray-500">
+                    <div class="text-xs themed-subtle-text">
                         {timeToNextAlarm.value.hours}h{" "}
                         {timeToNextAlarm.value.minutes}min{" "}
                         {timeToNextAlarm.value.seconds}s päästä
@@ -450,7 +450,7 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
                     />
                     <label
                         for="pre-alarm"
-                        class="text-xs text-gray-600 cursor-pointer"
+                        class="text-xs themed-muted-text cursor-pointer"
                     >
                         Väliaikaviestit
                     </label>
@@ -462,7 +462,7 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
                             <button
                                 type="button"
                                 onClick={testPreAlarm}
-                                class="px-2 py-1 text-xs bg-gray-300 hover:bg-gray-400 text-gray-700 rounded transition-colors"
+                                class="themed-secondary-button px-2 py-1 text-xs rounded transition-colors"
                             >
                                 🔊{" "}
                                 <span class="text-[10px]">
@@ -479,7 +479,7 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
                         <select
                             value={preAlarmInterval.value}
                             onInput={handleIntervalChange}
-                            class="w-20 pl-2 pr-6 py-1 border border-gray-300 rounded text-xs bg-white text-gray-900"
+                            class="themed-field w-20 pl-2 pr-6 py-1 text-xs rounded"
                         >
                             {Array.from({ length: 60 }, (_, i) => i + 1).map(
                                 (value) => (
@@ -487,7 +487,9 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
                                 ),
                             )}
                         </select>
-                        <label class="text-xs text-gray-600">min välein</label>
+                        <label class="text-xs themed-muted-text">
+                            min välein
+                        </label>
                     </div>
                 )}
             </div>

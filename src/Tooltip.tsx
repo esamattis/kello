@@ -106,7 +106,7 @@ export function Tooltip({
                 ref={popoverRef}
                 id={popoverId}
                 popover="manual"
-                class="fixed m-0 px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none z-50 opacity-0 transition-opacity duration-200 [&:popover-open]:opacity-100"
+                class="themed-tooltip fixed m-0 px-2 py-1 text-xs rounded shadow-lg pointer-events-none z-50 opacity-0 transition-opacity duration-200 [&:popover-open]:opacity-100"
             >
                 {content}
             </div>

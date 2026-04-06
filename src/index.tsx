@@ -27,6 +27,27 @@ const wakeLockEnabled = signal(false);
 const wakeLockSupported = signal("wakeLock" in navigator);
 let wakeLockSentinel: WakeLockSentinel | null = null;
 
+const storedTheme = window.localStorage.getItem("theme");
+const darkModeEnabled = signal(
+    storedTheme !== null ? storedTheme === "dark" : false,
+);
+
+function applyTheme(isDark: boolean) {
+    document.documentElement.dataset.theme = isDark ? "dark" : "light";
+    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+}
+
+function toggleDarkMode() {
+    darkModeEnabled.value = !darkModeEnabled.value;
+    applyTheme(darkModeEnabled.value);
+    window.localStorage.setItem(
+        "theme",
+        darkModeEnabled.value ? "dark" : "light",
+    );
+}
+
+applyTheme(darkModeEnabled.value);
+
 // Fullscreen state
 const fullscreenEnabled = signal(false);
 const fullscreenSupported = signal(
@@ -194,7 +215,7 @@ function AnalogClock() {
                 y1="8"
                 x2="50"
                 y2="12"
-                stroke="#333333"
+                stroke="var(--clock-hour-marker)"
                 stroke-width="2"
                 stroke-linecap="round"
                 transform={`rotate(${angle} 50 50)`}
@@ -214,7 +235,7 @@ function AnalogClock() {
                     y1="9"
                     x2="50"
                     y2="11"
-                    stroke="#666666"
+                    stroke="var(--clock-minute-marker)"
                     stroke-width="0.5"
                     stroke-linecap="round"
                     transform={`rotate(${angle} 50 50)`}
@@ -240,7 +261,7 @@ function AnalogClock() {
                 font-size="8"
                 font-family="Arial, sans-serif"
                 font-weight="bold"
-                fill="#333333"
+                fill="var(--clock-hour-number)"
             >
                 {i}
             </text>,
@@ -264,7 +285,7 @@ function AnalogClock() {
                 dominant-baseline="central"
                 font-size="4"
                 font-family="Arial, sans-serif"
-                fill="#888888"
+                fill="var(--clock-hour24-number)"
             >
                 {hour24}
             </text>,
@@ -288,8 +309,7 @@ function AnalogClock() {
                 dominant-baseline="central"
                 font-size="2.5"
                 font-family="Arial, sans-serif"
-                // fill="#e53e3e" // red
-                fill="#888888"
+                fill="var(--clock-minute-number)"
             >
                 {minute}
             </text>,
@@ -314,8 +334,8 @@ function AnalogClock() {
                 cx="50"
                 cy="50"
                 r="48"
-                fill="#ffffff"
-                stroke="#333333"
+                fill="var(--clock-face)"
+                stroke="var(--clock-ring)"
                 stroke-width="2"
                 style={{
                     cursor: alarmEnabled.value ? "pointer" : "default",
@@ -345,7 +365,7 @@ function AnalogClock() {
                 y1="50"
                 x2="50"
                 y2="28"
-                stroke="#222222"
+                stroke="var(--clock-hour-hand)"
                 stroke-width="3"
                 stroke-linecap="round"
                 transform={`rotate(${hoursAngle.value} 50 50)`}
@@ -357,7 +377,7 @@ function AnalogClock() {
                 y1="50"
                 x2="50"
                 y2="18"
-                stroke="#444444"
+                stroke="var(--clock-minute-hand)"
                 stroke-width="2"
                 stroke-linecap="round"
                 class={minuteTick.value ? "hand-tick" : ""}
@@ -389,7 +409,7 @@ function AnalogClock() {
             {alarmEnabled.value && <AlarmHand svgRef={svgRef} />}
 
             {/* Center dot */}
-            <circle cx="50" cy="50" r="2.5" fill="#222222" />
+            <circle cx="50" cy="50" r="2.5" fill="var(--clock-center)" />
             <circle cx="50" cy="50" r="1" fill="#e53e3e" />
         </svg>
     );
@@ -436,7 +456,7 @@ function AlarmBellIcon() {
                 transformOrigin: "top right",
                 transition: "transform 0.2s ease-out",
             }}
-            title="Alarm is active"
+            title="Hälytys on käytössä"
         >
             <svg
                 width="24"
@@ -569,6 +589,23 @@ function FullscreenToggle() {
     );
 }
 
+function DarkModeToggle() {
+    return (
+        <Tooltip content="Vaihda tummaan tai vaaleaan teemaan">
+            <ToggleButton
+                checked={darkModeEnabled.value}
+                checkbox
+                onChange={toggleDarkMode}
+                checkedClass="bg-slate-800 text-white hover:bg-slate-700"
+                uncheckedClass="bg-gray-200 text-gray-700 hover:bg-gray-300 dark-toggle-off"
+                checkedChildren="🌙 Tumma tila"
+            >
+                🌙 Tumma tila
+            </ToggleButton>
+        </Tooltip>
+    );
+}
+
 function VoiceDebug() {
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -689,7 +726,14 @@ function VoiceDebug() {
 
 export function App() {
     return (
-        <div style={{ overflow: "hidden", width: "100%" }}>
+        <div
+            style={{
+                overflow: "hidden",
+                width: "100%",
+                backgroundColor: "var(--app-bg)",
+                color: "var(--text-primary)",
+            }}
+        >
             <DigitalClock />
             <AlarmBellIcon />
             <AlarmFlashBackground />
@@ -705,7 +749,7 @@ export function App() {
                     padding: 0,
                     backgroundColor: alarmTriggered.value
                         ? "transparent"
-                        : "#f5f5f5",
+                        : "var(--app-bg)",
                     overflow: "hidden",
                 }}
             >
@@ -715,7 +759,8 @@ export function App() {
             {/* Controls section - appears below when scrolled */}
             <div
                 style={{
-                    backgroundColor: "#ffffff",
+                    backgroundColor: "var(--panel-bg)",
+                    color: "var(--text-primary)",
                     padding: "2rem",
                     minHeight: "30vh",
                     width: "100%",
@@ -727,22 +772,22 @@ export function App() {
                     <AlarmToggle />
                     <AlarmTimeInput currentTime={currentTime} />
                 </div>
-                <div class="mt-8 text-center flex flex-col items-center gap-4">
+                <footer class="footer-links mt-8 pt-6 text-center flex flex-col items-center gap-4 max-w-md mx-auto">
                     <AlarmTestButton />
+                    <div class="w-full max-w-xs">
+                        <DarkModeToggle />
+                    </div>
                     <a
                         href="https://github.com/esamattis/kello"
                         rel="noopener noreferrer"
-                        class="text-gray-600 hover:text-gray-900 text-sm"
+                        class="footer-link text-sm"
                     >
                         GitHub
                     </a>
-                    <a
-                        href="?debug=voices"
-                        class="text-gray-600 hover:text-gray-900 text-sm"
-                    >
+                    <a href="?debug=voices" class="footer-link text-sm">
                         Debug-näkymä
                     </a>
-                </div>
+                </footer>
             </div>
         </div>
     );

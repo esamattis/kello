@@ -8,6 +8,137 @@ html {
     width: 100%;
 }
 
+:root {
+    color-scheme: light;
+    --app-bg: #f5f5f5;
+    --panel-bg: #ffffff;
+    --text-primary: #111827;
+    --text-muted: #4b5563;
+    --text-subtle: #6b7280;
+    --border-subtle: #d1d5db;
+    --field-bg: #ffffff;
+    --field-border: #d1d5db;
+    --field-text: #111827;
+    --secondary-button-bg: #e5e7eb;
+    --secondary-button-hover: #d1d5db;
+    --secondary-button-text: #374151;
+    --tooltip-bg: #111827;
+    --tooltip-text: #ffffff;
+    --clock-face: #ffffff;
+    --clock-ring: #333333;
+    --clock-hour-marker: #333333;
+    --clock-minute-marker: #666666;
+    --clock-hour-number: #333333;
+    --clock-hour24-number: #888888;
+    --clock-minute-number: #888888;
+    --clock-hour-hand: #222222;
+    --clock-minute-hand: #444444;
+    --clock-center: #222222;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --app-bg: #020617;
+    --panel-bg: #0f172a;
+    --text-primary: #e5edf7;
+    --text-muted: #cbd5e1;
+    --text-subtle: #94a3b8;
+    --border-subtle: #334155;
+    --field-bg: #111827;
+    --field-border: #475569;
+    --field-text: #e5edf7;
+    --secondary-button-bg: #1e293b;
+    --secondary-button-hover: #334155;
+    --secondary-button-text: #e5edf7;
+    --tooltip-bg: #e2e8f0;
+    --tooltip-text: #0f172a;
+    --clock-face: #111827;
+    --clock-ring: #cbd5e1;
+    --clock-hour-marker: #e2e8f0;
+    --clock-minute-marker: #64748b;
+    --clock-hour-number: #f8fafc;
+    --clock-hour24-number: #94a3b8;
+    --clock-minute-number: #64748b;
+    --clock-hour-hand: #f8fafc;
+    --clock-minute-hand: #cbd5e1;
+    --clock-center: #f8fafc;
+}
+
+html,
+body {
+    background-color: var(--app-bg);
+    color: var(--text-primary);
+}
+
+body {
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.themed-secondary-button {
+    background-color: var(--secondary-button-bg);
+    color: var(--secondary-button-text);
+}
+
+.themed-secondary-button:hover {
+    background-color: var(--secondary-button-hover);
+}
+
+.themed-input-shell {
+    background-color: var(--secondary-button-bg);
+    color: var(--secondary-button-text);
+}
+
+.themed-field {
+    border: 1px solid var(--field-border);
+    background-color: var(--field-bg);
+    color: var(--field-text);
+}
+
+.themed-tooltip {
+    background-color: var(--tooltip-bg);
+    color: var(--tooltip-text);
+}
+
+.themed-muted-text {
+    color: var(--text-muted);
+}
+
+.themed-subtle-text {
+    color: var(--text-subtle);
+}
+
+.footer-links {
+    border-top: 1px solid var(--border-subtle);
+}
+
+.footer-link {
+    color: var(--text-muted);
+}
+
+.footer-link:hover {
+    color: var(--text-primary);
+}
+
+.dark-toggle-off {
+    background-color: var(--secondary-button-bg);
+    color: var(--secondary-button-text);
+}
+
+.dark-toggle-off:hover {
+    background-color: var(--secondary-button-hover);
+}
+
+.toggle-unchecked {
+    background-color: var(--secondary-button-bg);
+    color: var(--secondary-button-text);
+}
+
+.toggle-unchecked:hover {
+    background-color: var(--secondary-button-hover);
+}
+
 @keyframes alarm-flash {
     0%,
     100% {
