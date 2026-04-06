@@ -398,7 +398,7 @@ export function AlarmSettings({ currentTime }: AlarmTimeInputProps) {
                     onChange={toggleAlarm}
                     checkedClass="bg-orange-500 text-white hover:bg-orange-600"
                 >
-                    ⏰ Päällä
+                    ⏰ {alarmEnabled.value ? "Päällä" : "Poistettu"}
                 </ToggleButton>
             </SettingsRow>
 
