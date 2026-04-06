@@ -2,6 +2,7 @@ import { signal, computed, Signal } from "@preact/signals";
 import { ToggleButton } from "./ToggleButton";
 import { Tooltip } from "./Tooltip";
 import { TimeField } from "./TimeField";
+import { SettingsCard, SettingsRow, CheckboxRow } from "./SettingsCard";
 import { useEffect, useRef } from "preact/hooks";
 import { urlSignal } from "./utils";
 
@@ -357,36 +358,11 @@ export function toggleAlarm() {
     }
 }
 
-export function AlarmToggle() {
-    return (
-        <ToggleButton
-            checked={alarmEnabled.value}
-            checkbox
-            onChange={toggleAlarm}
-            checkedClass="bg-orange-500 text-white hover:bg-orange-600"
-        >
-            ⏰ Hälytys
-        </ToggleButton>
-    );
-}
-
-export function AlarmTestButton() {
-    return (
-        <button
-            type="button"
-            onClick={testAlarm}
-            class="themed-secondary-button px-4 py-2 text-sm rounded transition-colors"
-        >
-            🔔 Testaa hälytys
-        </button>
-    );
-}
-
 interface AlarmTimeInputProps {
     currentTime: Signal<Date>;
 }
 
-export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
+export function AlarmSettings({ currentTime }: AlarmTimeInputProps) {
     const timeToNextAlarm = computeTimeToNextAlarm(currentTime);
 
     const handleTimeChange = (e: Event) => {
@@ -412,86 +388,99 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
         `${String(alarmHours.value).padStart(2, "0")}:` +
         `${String(alarmMinutes.value).padStart(2, "0")}`;
 
-    if (!alarmEnabled.value) {
-        return null;
-    }
-
     return (
-        <div class="themed-input-shell w-full px-4 py-4 rounded-full text-sm font-medium flex items-center justify-center">
-            <div class="w-44 flex flex-col gap-1">
-                <div class="flex items-center gap-2">
-                    <TimeField
-                        id="alarm-time"
-                        label="Herätys:"
-                        value={timeValue}
-                        onInput={handleTimeChange}
-                    />
-                </div>
-                <div class="text-[10px] italic themed-subtle-text">
-                    Voit sää&shy;tää he&shy;rä&shy;tys&shy;tä myös
-                    ve&shy;tä&shy;mäl&shy;lä vii&shy;sa&shy;ria
-                </div>
-                {timeToNextAlarm.value && (
-                    <div class="text-xs themed-subtle-text">
-                        {timeToNextAlarm.value.hours}h{" "}
-                        {timeToNextAlarm.value.minutes}min{" "}
-                        {timeToNextAlarm.value.seconds}s päästä
-                    </div>
-                )}
-                <div class="flex mt-5 items-center gap-2">
-                    <input
-                        type="checkbox"
-                        id="pre-alarm"
-                        checked={preAlarmEnabled.value}
-                        onChange={togglePreAlarm}
-                        class="w-4 h-4"
-                    />
-                    <label
-                        for="pre-alarm"
-                        class="text-xs themed-muted-text cursor-pointer"
-                    >
-                        Väliaikaviestit
-                    </label>
-                    {preAlarmEnabled.value && (
-                        <Tooltip
-                            content="Testaa väliaikaviesti"
-                            position="right"
+        <SettingsCard>
+            {/* Alarm master toggle */}
+            <SettingsRow label="Hälytys">
+                <ToggleButton
+                    checked={alarmEnabled.value}
+                    checkbox
+                    onChange={toggleAlarm}
+                    checkedClass="bg-orange-500 text-white hover:bg-orange-600"
+                >
+                    ⏰ Päällä
+                </ToggleButton>
+            </SettingsRow>
+
+            {alarmEnabled.value && (
+                <>
+                    {/* Time picker */}
+                    <SettingsRow label="Herätysaika">
+                        <TimeField
+                            id="alarm-time"
+                            label=""
+                            value={timeValue}
+                            onInput={handleTimeChange}
+                        />
+                    </SettingsRow>
+
+                    {/* Drag hint */}
+                    <p class="text-xs themed-subtle-text italic">
+                        Voit säätää herätystä myös vetämällä viisaria
+                    </p>
+
+                    {/* Countdown */}
+                    {timeToNextAlarm.value && (
+                        <p class="text-xs themed-subtle-text">
+                            {timeToNextAlarm.value.hours}h{" "}
+                            {timeToNextAlarm.value.minutes}min{" "}
+                            {timeToNextAlarm.value.seconds}s päästä
+                        </p>
+                    )}
+
+                    {/* Pre-alarm */}
+                    <div class="pt-1 border-t border-[var(--border-subtle)]">
+                        <CheckboxRow
+                            id="pre-alarm"
+                            label="Väliaikaviestit"
+                            checked={preAlarmEnabled.value}
+                            onChange={togglePreAlarm}
                         >
-                            <button
-                                type="button"
-                                onClick={testPreAlarm}
-                                class="themed-secondary-button px-2 py-1 text-xs rounded transition-colors"
+                            <SettingsRow label="Väli">
+                                <select
+                                    value={preAlarmInterval.value}
+                                    onInput={handleIntervalChange}
+                                    class="themed-field w-20 pl-2 pr-6 py-1 text-xs rounded"
+                                >
+                                    {Array.from(
+                                        { length: 60 },
+                                        (_, i) => i + 1,
+                                    ).map((v) => (
+                                        <option value={v}>{v} min</option>
+                                    ))}
+                                </select>
+                            </SettingsRow>
+                            <Tooltip
+                                content="Testaa väliaikaviesti"
+                                position="right"
                             >
-                                🔊{" "}
-                                <span class="text-[10px]">
+                                <button
+                                    type="button"
+                                    onClick={testPreAlarm}
+                                    class="themed-secondary-button px-3 py-1 text-xs rounded transition-colors"
+                                >
+                                    🔊{" "}
                                     {voice.value
                                         ? `${voice.value.name} (${voice.value.lang})`
                                         : "Ei ääntä?"}
-                                </span>
-                            </button>
-                        </Tooltip>
-                    )}
-                </div>
-                {preAlarmEnabled.value && (
-                    <div class="flex items-center gap-2">
-                        <select
-                            value={preAlarmInterval.value}
-                            onInput={handleIntervalChange}
-                            class="themed-field w-20 pl-2 pr-6 py-1 text-xs rounded"
-                        >
-                            {Array.from({ length: 60 }, (_, i) => i + 1).map(
-                                (value) => (
-                                    <option value={value}>{value}</option>
-                                ),
-                            )}
-                        </select>
-                        <label class="text-xs themed-muted-text">
-                            min välein
-                        </label>
+                                </button>
+                            </Tooltip>
+                        </CheckboxRow>
                     </div>
-                )}
-            </div>
-        </div>
+
+                    {/* Test alarm */}
+                    <div class="pt-1 border-t border-[var(--border-subtle)]">
+                        <button
+                            type="button"
+                            onClick={testAlarm}
+                            class="themed-secondary-button w-full px-4 py-2 text-sm rounded-lg transition-colors"
+                        >
+                            🔔 Testaa hälytys
+                        </button>
+                    </div>
+                </>
+            )}
+        </SettingsCard>
     );
 }
 

@@ -6,8 +6,7 @@ import { ToggleButton } from "./ToggleButton";
 import {
     checkAlarm,
     triggerAlarm,
-    AlarmToggle,
-    AlarmTimeInput,
+    AlarmSettings,
     AlarmFlashBackground,
     AlarmHand,
     alarmEnabled,
@@ -16,12 +15,12 @@ import {
     useAlarmHandDrag,
     computeTimeToNextAlarm,
     alarmTimeFormatted,
-    AlarmTestButton,
     checkPreAlarm,
     playPreAlarmDing,
 } from "./alarm";
 import { TimeField } from "./TimeField";
 import { Tooltip } from "./Tooltip";
+import { SettingsCard, SettingsRow, CheckboxRow } from "./SettingsCard";
 
 // Wake Lock state
 const wakeLockEnabled = signal(false);
@@ -657,53 +656,42 @@ function FullscreenToggle() {
     );
 }
 
-function DarkModeToggle() {
+function DarkModeSettings() {
     return (
-        <Tooltip content="Vaihda tummaan tai vaaleaan teemaan">
-            <ToggleButton
-                checked={darkModeEnabled.value}
-                checkbox
-                onChange={toggleDarkMode}
-                checkedClass="bg-slate-800 text-white hover:bg-slate-700"
-                uncheckedClass="bg-gray-200 text-gray-700 hover:bg-gray-300 dark-toggle-off"
-                checkedChildren="🌙 Tumma tila"
-            >
-                🌙 Tumma tila
-            </ToggleButton>
-        </Tooltip>
-    );
-}
+        <SettingsCard>
+            <SettingsRow label="Tumma tila">
+                <ToggleButton
+                    checked={darkModeEnabled.value}
+                    checkbox
+                    onChange={toggleDarkMode}
+                    checkedClass="bg-slate-800 text-white hover:bg-slate-700"
+                    uncheckedClass="bg-gray-200 text-gray-700 hover:bg-gray-300 dark-toggle-off"
+                    checkedChildren="🌙 Päällä"
+                >
+                    🌙 Pois
+                </ToggleButton>
+            </SettingsRow>
 
-function DarkModeAutoOffInput() {
-    return (
-        <div class="themed-input-shell w-full px-4 py-4 rounded-full text-sm font-medium flex items-center justify-center">
-            <div class="w-full flex flex-col gap-2">
-                <div class="flex items-center gap-2">
-                    <input
-                        type="checkbox"
+            {darkModeEnabled.value && (
+                <div class="pt-1 border-t border-[var(--border-subtle)]">
+                    <CheckboxRow
                         id="dark-mode-auto-off"
+                        label="Sammuta automaattisesti"
                         checked={darkModeAutoOffEnabled.value}
                         onChange={toggleDarkModeAutoOff}
-                        class="w-4 h-4"
-                    />
-                    <label
-                        for="dark-mode-auto-off"
-                        class="text-xs themed-muted-text cursor-pointer"
                     >
-                        Sammuta automaattisesti
-                    </label>
+                        <SettingsRow label="Sammutusaika">
+                            <TimeField
+                                id="dark-mode-auto-off-time"
+                                label=""
+                                value={darkModeAutoOffTime.value}
+                                onInput={handleDarkModeAutoOffTimeChange}
+                            />
+                        </SettingsRow>
+                    </CheckboxRow>
                 </div>
-                {darkModeAutoOffEnabled.value && (
-                    <TimeField
-                        id="dark-mode-auto-off-time"
-                        label="Sammutus:"
-                        value={darkModeAutoOffTime.value}
-                        onInput={handleDarkModeAutoOffTimeChange}
-                        labelClass="text-xs themed-muted-text"
-                    />
-                )}
-            </div>
-        </div>
+            )}
+        </SettingsCard>
     );
 }
 
@@ -867,18 +855,13 @@ export function App() {
                     width: "100%",
                 }}
             >
-                <div class="mt-5 max-w-md mx-auto flex flex-col gap-4">
+                <div class="mt-5 max-w-md mx-auto flex flex-col gap-3">
                     <FullscreenToggle />
                     <WakeLockToggle />
-                    <AlarmToggle />
-                    <AlarmTimeInput currentTime={currentTime} />
+                    <AlarmSettings currentTime={currentTime} />
+                    <DarkModeSettings />
                 </div>
-                <footer class="footer-links mt-8 pt-6 text-center flex flex-col items-center gap-4 max-w-md mx-auto">
-                    <AlarmTestButton />
-                    <div class="w-full max-w-xs flex flex-col gap-3">
-                        <DarkModeToggle />
-                        <DarkModeAutoOffInput />
-                    </div>
+                <footer class="footer-links mt-8 pt-6 text-center flex flex-col items-center gap-3 max-w-md mx-auto">
                     <a
                         href="https://github.com/esamattis/kello"
                         rel="noopener noreferrer"
