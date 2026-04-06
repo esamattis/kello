@@ -20,6 +20,7 @@ import {
     checkPreAlarm,
     playPreAlarmDing,
 } from "./alarm";
+import { TimeField } from "./TimeField";
 import { Tooltip } from "./Tooltip";
 
 // Wake Lock state
@@ -28,8 +29,20 @@ const wakeLockSupported = signal("wakeLock" in navigator);
 let wakeLockSentinel: WakeLockSentinel | null = null;
 
 const storedTheme = window.localStorage.getItem("theme");
+const storedDarkModeAutoOffEnabled = window.localStorage.getItem(
+    "darkModeAutoOffEnabled",
+);
+const storedDarkModeAutoOffTime = window.localStorage.getItem(
+    "darkModeAutoOffTime",
+);
 const darkModeEnabled = signal(
     storedTheme !== null ? storedTheme === "dark" : false,
+);
+const darkModeAutoOffEnabled = signal(storedDarkModeAutoOffEnabled === "true");
+const darkModeAutoOffTime = signal(
+    storedDarkModeAutoOffTime && /^\d{2}:\d{2}$/.test(storedDarkModeAutoOffTime)
+        ? storedDarkModeAutoOffTime
+        : "07:00",
 );
 
 function applyTheme(isDark: boolean) {
@@ -37,12 +50,63 @@ function applyTheme(isDark: boolean) {
     document.documentElement.style.colorScheme = isDark ? "dark" : "light";
 }
 
-function toggleDarkMode() {
-    darkModeEnabled.value = !darkModeEnabled.value;
-    applyTheme(darkModeEnabled.value);
+function persistDarkModePreference() {
     window.localStorage.setItem(
         "theme",
         darkModeEnabled.value ? "dark" : "light",
+    );
+}
+
+function persistDarkModeAutoOff() {
+    window.localStorage.setItem(
+        "darkModeAutoOffEnabled",
+        darkModeAutoOffEnabled.value ? "true" : "false",
+    );
+    window.localStorage.setItem(
+        "darkModeAutoOffTime",
+        darkModeAutoOffTime.value,
+    );
+}
+
+function setDarkModeEnabled(isDark: boolean) {
+    darkModeEnabled.value = isDark;
+    applyTheme(isDark);
+    persistDarkModePreference();
+}
+
+function toggleDarkMode() {
+    setDarkModeEnabled(!darkModeEnabled.value);
+}
+
+function toggleDarkModeAutoOff() {
+    darkModeAutoOffEnabled.value = !darkModeAutoOffEnabled.value;
+    persistDarkModeAutoOff();
+}
+
+function handleDarkModeAutoOffTimeChange(e: Event) {
+    const target = e.target as HTMLInputElement;
+    if (!target.value) {
+        return;
+    }
+
+    darkModeAutoOffTime.value = target.value;
+    persistDarkModeAutoOff();
+}
+
+function shouldDisableDarkMode(currentTime: Date) {
+    if (!darkModeEnabled.value || !darkModeAutoOffEnabled.value) {
+        return false;
+    }
+
+    const parts = darkModeAutoOffTime.value.split(":");
+    const hours = Number(parts[0]);
+    const minutes = Number(parts[1]);
+
+    return (
+        !isNaN(hours) &&
+        !isNaN(minutes) &&
+        currentTime.getHours() === hours &&
+        currentTime.getMinutes() === minutes
     );
 }
 
@@ -188,6 +252,10 @@ function AnalogClock() {
                 currentTime.value.getMinutes();
             if (currentMinute !== lastCheckedMinute.value) {
                 lastCheckedMinute.value = currentMinute;
+
+                if (shouldDisableDarkMode(currentTime.value)) {
+                    setDarkModeEnabled(false);
+                }
 
                 if (checkAlarm(currentTime.value)) {
                     triggerAlarm();
@@ -606,6 +674,39 @@ function DarkModeToggle() {
     );
 }
 
+function DarkModeAutoOffInput() {
+    return (
+        <div class="themed-input-shell w-full px-4 py-4 rounded-full text-sm font-medium flex items-center justify-center">
+            <div class="w-full flex flex-col gap-2">
+                <div class="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        id="dark-mode-auto-off"
+                        checked={darkModeAutoOffEnabled.value}
+                        onChange={toggleDarkModeAutoOff}
+                        class="w-4 h-4"
+                    />
+                    <label
+                        for="dark-mode-auto-off"
+                        class="text-xs themed-muted-text cursor-pointer"
+                    >
+                        Sammuta automaattisesti
+                    </label>
+                </div>
+                {darkModeAutoOffEnabled.value && (
+                    <TimeField
+                        id="dark-mode-auto-off-time"
+                        label="Sammutus:"
+                        value={darkModeAutoOffTime.value}
+                        onInput={handleDarkModeAutoOffTimeChange}
+                        labelClass="text-xs themed-muted-text"
+                    />
+                )}
+            </div>
+        </div>
+    );
+}
+
 function VoiceDebug() {
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -774,8 +875,9 @@ export function App() {
                 </div>
                 <footer class="footer-links mt-8 pt-6 text-center flex flex-col items-center gap-4 max-w-md mx-auto">
                     <AlarmTestButton />
-                    <div class="w-full max-w-xs">
+                    <div class="w-full max-w-xs flex flex-col gap-3">
                         <DarkModeToggle />
+                        <DarkModeAutoOffInput />
                     </div>
                     <a
                         href="https://github.com/esamattis/kello"
