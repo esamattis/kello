@@ -1,6 +1,7 @@
 import { signal, computed, Signal } from "@preact/signals";
 import { ToggleButton } from "./ToggleButton";
 import { Tooltip } from "./Tooltip";
+import { TimeField } from "./TimeField";
 import { useEffect, useRef } from "preact/hooks";
 import { urlSignal } from "./utils";
 
@@ -419,15 +420,12 @@ export function AlarmTimeInput({ currentTime }: AlarmTimeInputProps) {
         <div class="themed-input-shell w-full px-4 py-4 rounded-full text-sm font-medium flex items-center justify-center">
             <div class="w-44 flex flex-col gap-1">
                 <div class="flex items-center gap-2">
-                    <label class="themed-muted-text">Herätys:</label>
-                    <div class="relative">
-                        <input
-                            type="time"
-                            value={timeValue}
-                            onInput={handleTimeChange}
-                            class="themed-field w-28 pl-2 pr-7 py-1 rounded text-sm"
-                        />
-                    </div>
+                    <TimeField
+                        id="alarm-time"
+                        label="Herätys:"
+                        value={timeValue}
+                        onInput={handleTimeChange}
+                    />
                 </div>
                 <div class="text-[10px] italic themed-subtle-text">
                     Voit sää&shy;tää he&shy;rä&shy;tys&shy;tä myös
