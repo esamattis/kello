@@ -819,7 +819,9 @@ export function App() {
             style={{
                 overflow: "hidden",
                 width: "100%",
-                backgroundColor: "var(--app-bg)",
+                backgroundColor: alarmTriggered.value
+                    ? "transparent"
+                    : "var(--app-bg)",
                 color: "var(--text-primary)",
             }}
         >

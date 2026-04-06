@@ -10,6 +10,8 @@ html {
 
 :root {
     color-scheme: light;
+    --alarm-flash-a: #ff4400;
+    --alarm-flash-b: #ffcc00;
     --app-bg: #f5f5f5;
     --panel-bg: #ffffff;
     --text-primary: #111827;
@@ -38,6 +40,8 @@ html {
 
 :root[data-theme="dark"] {
     color-scheme: dark;
+    --alarm-flash-a: #7f1d1d;
+    --alarm-flash-b: #ef4444;
     --app-bg: #020617;
     --panel-bg: #0f172a;
     --text-primary: #e5edf7;
@@ -147,10 +151,10 @@ body {
 @keyframes alarm-flash {
     0%,
     100% {
-        background-color: #000000;
+        background-color: var(--alarm-flash-a);
     }
     50% {
-        background-color: #ffffff;
+        background-color: var(--alarm-flash-b);
     }
 }
 

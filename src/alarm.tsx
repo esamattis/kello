@@ -626,7 +626,12 @@ export function AlarmHand({ svgRef }: AlarmHandProps) {
 
 export function AlarmFlashBackground() {
     useEffect(() => {
-        if (!alarmTriggered.value) return;
+        if (!alarmTriggered.value) {
+            document.body.classList.remove("alarm-flash-background");
+            return;
+        }
+
+        document.body.classList.add("alarm-flash-background");
 
         const handleDismiss = () => {
             dismissAlarm();
@@ -636,14 +641,11 @@ export function AlarmFlashBackground() {
         document.addEventListener("touchstart", handleDismiss);
 
         return () => {
+            document.body.classList.remove("alarm-flash-background");
             document.removeEventListener("click", handleDismiss);
             document.removeEventListener("touchstart", handleDismiss);
         };
     }, [alarmTriggered.value]);
 
-    if (!alarmTriggered.value) {
-        return null;
-    }
-
-    return <div class="fixed inset-0 -z-10 alarm-flash-background" />;
+    return null;
 }
