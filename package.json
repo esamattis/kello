@@ -4,21 +4,37 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "deploy": "npm run build && wrangler pages deploy dist",
+        "deploy": "pnpm run build && wrangler pages deploy dist",
         "check": "tsc",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "test": "playwright test"
     },
     "dependencies": {
-        "@preact/signals": "^2.5.1",
-        "@tailwindcss/vite": "^4.1.18",
-        "preact": "^10.26.9",
-        "prettier": "^3.7.4",
-        "tailwindcss": "^4.1.18",
-        "wrangler": "^4.57.0"
+        "@preact/signals": "^2.11.4",
+        "@tailwindcss/vite": "^4.3.5",
+        "preact": "^11.2.0",
+        "prettier": "^3.10.1",
+        "tailwindcss": "^4.3.5",
+        "wrangler": "^4.161.0"
     },
     "devDependencies": {
-        "@preact/preset-vite": "^2.10.2",
-        "typescript": "^5.9.3",
-        "vite": "^7.0.4"
+        "@playwright/test": "^1.65.0",
+        "@preact/preset-vite": "^2.10.6",
+        "@types/node": "^26.6.6",
+        "typescript": "^7.0.2",
+        "vite": "^8.3.8"
+    },
+    "packageManager": "pnpm@12.18.0",
+    "devEngines": {
+        "runtime": {
+            "name": "node",
+            "version": "26.13.1",
+            "onFail": "error"
+        },
+        "packageManager": {
+            "name": "pnpm",
+            "version": "12.18.0",
+            "onFail": "error"
+        }
     }
 }

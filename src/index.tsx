@@ -1,26 +1,31 @@
 import { render } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { signal, Signal, computed } from "@preact/signals";
 import "./style.css";
 import { ToggleButton } from "./ToggleButton";
 import {
     checkAlarm,
     triggerAlarm,
-    AlarmSettings,
     AlarmFlashBackground,
     AlarmHand,
     alarmEnabled,
-    alarmHandDragging,
     alarmTriggered,
-    useAlarmHandDrag,
-    computeTimeToNextAlarm,
-    alarmTimeFormatted,
     checkPreAlarm,
     playPreAlarmDing,
 } from "./alarm";
-import { TimeField } from "./TimeField";
+import { AlarmSettings } from "./AlarmSettings";
+import { ClockStage } from "./ClockBadges";
+import { MaximizeIcon, MinimizeIcon, MoonIcon, SunIcon } from "./icons";
 import { Tooltip } from "./Tooltip";
-import { SettingsCard, SettingsRow, CheckboxRow } from "./SettingsCard";
+import {
+    Card,
+    CardHeader,
+    formatDialTime,
+    formatTime,
+    Section,
+    SwitchRow,
+    TimePicker,
+} from "./ui";
 
 // Wake Lock state
 const wakeLockEnabled = signal(false);
@@ -82,16 +87,6 @@ function toggleDarkModeAutoOff() {
     persistDarkModeAutoOff();
 }
 
-function handleDarkModeAutoOffTimeChange(e: Event) {
-    const target = e.target as HTMLInputElement;
-    if (!target.value) {
-        return;
-    }
-
-    darkModeAutoOffTime.value = target.value;
-    persistDarkModeAutoOff();
-}
-
 function shouldDisableDarkMode(currentTime: Date) {
     if (!darkModeEnabled.value || !darkModeAutoOffEnabled.value) {
         return false;
@@ -101,10 +96,11 @@ function shouldDisableDarkMode(currentTime: Date) {
     const hours = Number(parts[0]);
     const minutes = Number(parts[1]);
 
+    // The picker is a 12-hour dial and auto-off happens in the morning (AM)
     return (
         !isNaN(hours) &&
         !isNaN(minutes) &&
-        currentTime.getHours() === hours &&
+        currentTime.getHours() === hours % 12 &&
         currentTime.getMinutes() === minutes
     );
 }
@@ -203,24 +199,6 @@ const hoursAngle = computed(() => {
 });
 
 function AnalogClock() {
-    const svgRef = useRef<SVGSVGElement>(null);
-    const { handleStart } = useAlarmHandDrag(svgRef);
-
-    const onClockFaceClick = (e: MouseEvent) => {
-        if (!alarmEnabled.value) return;
-        e.preventDefault();
-        handleStart(e.clientX, e.clientY);
-    };
-
-    const onClockFaceTouchStart = (e: TouchEvent) => {
-        if (!alarmEnabled.value) return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        if (touch) {
-            handleStart(touch.clientX, touch.clientY);
-        }
-    };
-
     useEffect(() => {
         const interval = setInterval(() => {
             currentTime.value = new Date();
@@ -385,13 +363,10 @@ function AnalogClock() {
 
     return (
         <svg
-            ref={svgRef}
             viewBox="0 0 100 100"
             style={{
                 width: "100%",
                 height: "100%",
-                maxWidth: "100vmin",
-                maxHeight: "100vmin",
                 display: "block",
                 userSelect: "none",
             }}
@@ -404,11 +379,6 @@ function AnalogClock() {
                 fill="var(--clock-face)"
                 stroke="var(--clock-ring)"
                 stroke-width="2"
-                style={{
-                    cursor: alarmEnabled.value ? "pointer" : "default",
-                }}
-                onMouseDown={onClockFaceClick}
-                onTouchStart={onClockFaceTouchStart}
             />
 
             {/* Hour markers */}
@@ -473,96 +443,12 @@ function AnalogClock() {
             />
 
             {/* Alarm hand (only shown when alarm is enabled) - rendered last to be on top */}
-            {alarmEnabled.value && <AlarmHand svgRef={svgRef} />}
+            {alarmEnabled.value && <AlarmHand />}
 
             {/* Center dot */}
             <circle cx="50" cy="50" r="2.5" fill="var(--clock-center)" />
             <circle cx="50" cy="50" r="1" fill="#e53e3e" />
         </svg>
-    );
-}
-
-function DigitalClock() {
-    const timeString = computed(() => {
-        const hours = currentTime.value.getHours().toString().padStart(2, "0");
-        const minutes = currentTime.value
-            .getMinutes()
-            .toString()
-            .padStart(2, "0");
-        const seconds = currentTime.value
-            .getSeconds()
-            .toString()
-            .padStart(2, "0");
-        return `${hours}:${minutes}:${seconds}`;
-    });
-
-    return (
-        <div
-            class="absolute top-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg font-mono text-lg font-bold shadow-lg"
-            style={{ zIndex: 1000 }}
-        >
-            {timeString.value}
-        </div>
-    );
-}
-
-function AlarmBellIcon() {
-    if (!alarmEnabled.value) {
-        return null;
-    }
-
-    const timeToAlarm = computeTimeToNextAlarm(currentTime);
-    const countdown = timeToAlarm.value;
-
-    return (
-        <div
-            class="absolute top-4 right-4 bg-orange-500 bg-opacity-90 p-2 rounded-lg shadow-lg flex flex-col items-center gap-1"
-            style={{
-                zIndex: 1000,
-                transform: alarmHandDragging.value ? "scale(2)" : "scale(1)",
-                transformOrigin: "top right",
-                transition: "transform 0.2s ease-out",
-            }}
-            title="Hälytys on käytössä"
-        >
-            <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                <path
-                    d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z"
-                    stroke="white"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                />
-                <path
-                    d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21"
-                    stroke="white"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                />
-            </svg>
-            <Tooltip content="Hälytysaika" position="left">
-                <div class="text-white font-mono text-xs font-bold">
-                    {alarmTimeFormatted.value}
-                </div>
-            </Tooltip>
-
-            {countdown && (
-                <Tooltip content="Aika seuraavaan herätykseen" position="left">
-                    <div class="text-white font-mono text-[10px] font-bold opacity-80">
-                        {countdown.hours.toString().padStart(2, "0")}:
-                        {countdown.minutes.toString().padStart(2, "0")}:
-                        {countdown.seconds.toString().padStart(2, "0")}
-                    </div>
-                </Tooltip>
-            )}
-        </div>
     );
 }
 
@@ -606,7 +492,8 @@ function WakeLockToggle() {
                 onChange={toggleWakeLock}
                 checkedClass="bg-green-500 text-white hover:bg-green-600"
             >
-                🔆 Pidä näyttö päällä
+                <SunIcon class="mr-1.5" />
+                Pidä näyttö päällä
             </ToggleButton>
         </Tooltip>
     );
@@ -655,50 +542,67 @@ function FullscreenToggle() {
             <ToggleButton
                 checked={fullscreenEnabled.value}
                 onChange={toggleFullscreen}
-                checkedChildren="⛶ Poistu koko näytöstä"
+                checkedChildren={
+                    <>
+                        <MinimizeIcon class="mr-1.5" />
+                        Poistu koko näytöstä
+                    </>
+                }
             >
-                ⛶ Koko näyttö
+                <MaximizeIcon class="mr-1.5" />
+                Koko näyttö
             </ToggleButton>
         </Tooltip>
     );
 }
 
 function DarkModeSettings() {
+    const [autoOffHours, autoOffMinutes] = darkModeAutoOffTime.value
+        .split(":")
+        .map(Number);
+
+    const handleAutoOffTimeChange = (hours: number, minutes: number) => {
+        darkModeAutoOffTime.value = formatTime(hours, minutes);
+        persistDarkModeAutoOff();
+    };
+
+    let status = "Pois päältä";
+    if (darkModeEnabled.value) {
+        status = darkModeAutoOffEnabled.value
+            ? `Sammuu klo ${formatDialTime(autoOffHours ?? 7, autoOffMinutes ?? 0)}`
+            : "Päällä";
+    }
+
     return (
-        <SettingsCard>
-            <SettingsRow label="Tumma tila">
-                <ToggleButton
-                    checked={darkModeEnabled.value}
-                    checkbox
-                    onChange={toggleDarkMode}
-                    checkedClass="bg-slate-800 text-white hover:bg-slate-700"
-                    uncheckedClass="bg-gray-200 text-gray-700 hover:bg-gray-300 dark-toggle-off"
-                    checkedChildren="🌙 Päällä"
-                >
-                    🌙 Pois
-                </ToggleButton>
-            </SettingsRow>
+        <Card>
+            <CardHeader
+                icon={<MoonIcon />}
+                title="Tumma tila"
+                status={status}
+                active={darkModeEnabled.value}
+                switchLabel="Tumma tila päälle"
+                onToggle={toggleDarkMode}
+            />
 
             {darkModeEnabled.value && (
-                <div class="pt-1 border-t border-[var(--border-subtle)]">
-                    <CheckboxRow
-                        id="dark-mode-auto-off"
-                        label="Sammuta automaattisesti"
+                <Section title="Automaattinen sammutus">
+                    <SwitchRow
+                        text="Vaihda vaaleaan tilaan aamulla"
                         checked={darkModeAutoOffEnabled.value}
                         onChange={toggleDarkModeAutoOff}
-                    >
-                        <SettingsRow label="Sammutusaika">
-                            <TimeField
-                                id="dark-mode-auto-off-time"
-                                label=""
-                                value={darkModeAutoOffTime.value}
-                                onInput={handleDarkModeAutoOffTimeChange}
-                            />
-                        </SettingsRow>
-                    </CheckboxRow>
-                </div>
+                        label="Automaattinen sammutus päälle"
+                    />
+                    {darkModeAutoOffEnabled.value && (
+                        <TimePicker
+                            label="Sammutusaika"
+                            hours={autoOffHours ?? 7}
+                            minutes={autoOffMinutes ?? 0}
+                            onChange={handleAutoOffTimeChange}
+                        />
+                    )}
+                </Section>
             )}
-        </SettingsCard>
+        </Card>
     );
 }
 
@@ -832,27 +736,10 @@ export function App() {
                 color: "var(--text-primary)",
             }}
         >
-            <DigitalClock />
-            <AlarmBellIcon />
             <AlarmFlashBackground />
-            {/* Clock container - 100dvh for mobile landscape support */}
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: "100dvh",
-                    width: "100%",
-                    margin: 0,
-                    padding: 0,
-                    backgroundColor: alarmTriggered.value
-                        ? "transparent"
-                        : "var(--app-bg)",
-                    overflow: "hidden",
-                }}
-            >
+            <ClockStage currentTime={currentTime}>
                 <AnalogClock />
-            </div>
+            </ClockStage>
 
             {/* Controls section - appears below when scrolled */}
             <div

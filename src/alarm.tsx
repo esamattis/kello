@@ -1,21 +1,18 @@
 import { signal, computed, Signal } from "@preact/signals";
-import { ToggleButton } from "./ToggleButton";
-import { Tooltip } from "./Tooltip";
-import { TimeField } from "./TimeField";
-import { SettingsCard, SettingsRow, CheckboxRow } from "./SettingsCard";
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect } from "preact/hooks";
 import { urlSignal } from "./utils";
+import { formatDialTime } from "./ui";
 
-// Dragging state for alarm hand
-export const alarmHandDragging = signal(false);
-
-// Alarm state (hours stored as 0-11)
+// Alarm state. The clock is a 12-hour clock: hours are stored as 0-11 and the
+// alarm rings at both AM and PM.
 export const alarmEnabled = urlSignal<boolean>("alarmEnabled", false);
 export const alarmHours = urlSignal<number>("alarmHours", 8);
 export const alarmMinutes = urlSignal<number>("alarmMinutes", 30);
 export const preAlarmEnabled = urlSignal<boolean>("preAlarmEnabled", false);
 export const preAlarmInterval = urlSignal<number>("preAlarmInterval", 5);
 export const alarmTriggered = signal(false);
+// True while a test alarm is ringing so dismissing it keeps the real alarm on
+let alarmIsTest = false;
 export const voice = signal<SpeechSynthesisVoice | null>(null);
 
 // Export preAlarmEnabled as a type-safe function for use in components
@@ -28,11 +25,9 @@ let audioContext: AudioContext | null = null;
 let oscillatorNode: OscillatorNode | null = null;
 let gainNode: GainNode | null = null;
 
-// Computed signal for formatted alarm time (shows 12-hour format)
+// Computed signal for formatted alarm time
 export const alarmTimeFormatted = computed(() => {
-    const h = alarmHours.value.toString().padStart(2, "0");
-    const m = alarmMinutes.value.toString().padStart(2, "0");
-    return `${h}:${m}`;
+    return formatDialTime(alarmHours.value, alarmMinutes.value);
 });
 
 function computeMinutesUntilAlarm(currentTime: Date): number {
@@ -40,9 +35,9 @@ function computeMinutesUntilAlarm(currentTime: Date): number {
     const currentMinutes = currentTime.getMinutes();
     const currentTotalMinutes = currentHours * 60 + currentMinutes;
 
-    const alarmTotalMinutes1 = alarmHours.value * 60 + alarmMinutes.value;
-    const alarmTotalMinutes2 =
-        (alarmHours.value + 12) * 60 + alarmMinutes.value;
+    const alarmHours12 = alarmHours.value % 12;
+    const alarmTotalMinutes1 = alarmHours12 * 60 + alarmMinutes.value;
+    const alarmTotalMinutes2 = (alarmHours12 + 12) * 60 + alarmMinutes.value;
 
     if (currentTotalMinutes < alarmTotalMinutes1) {
         return alarmTotalMinutes1 - currentTotalMinutes;
@@ -94,7 +89,7 @@ export function checkAlarm(currentTime: Date): boolean {
     }
 
     // Match on 12-hour basis (triggers at both AM and PM)
-    return hours12 === alarmHours.value && minutes === alarmMinutes.value;
+    return hours12 === alarmHours.value % 12 && minutes === alarmMinutes.value;
 }
 
 // Play a pleasant alarm sound
@@ -315,7 +310,10 @@ export function triggerAlarm() {
 // Dismiss the alarm
 export function dismissAlarm() {
     alarmTriggered.value = false;
-    alarmEnabled.value = false;
+    if (!alarmIsTest) {
+        alarmEnabled.value = false;
+    }
+    alarmIsTest = false;
     stopAlarmSound();
 }
 
@@ -323,6 +321,7 @@ export function dismissAlarm() {
 export function testAlarm() {
     if (alarmTriggered.value) return; // Already triggered
     window.scrollTo({ top: 0, behavior: "smooth" });
+    alarmIsTest = true;
     alarmTriggered.value = true;
     playAlarmSound();
 }
@@ -350,138 +349,24 @@ export function setAlarmMinutes(minutes: number) {
     alarmMinutes.value = ((minutes % 60) + 60) % 60;
 }
 
+// Set the alarm to ring the given number of minutes from now
+export function setAlarmInMinutes(minutesFromNow: number) {
+    const target = new Date(Date.now() + minutesFromNow * 60 * 1000);
+    // Round to the nearest minute since the alarm triggers on minute changes
+    if (target.getSeconds() >= 30) {
+        target.setMinutes(target.getMinutes() + 1);
+    }
+    setAlarmHours(target.getHours());
+    setAlarmMinutes(target.getMinutes());
+    alarmEnabled.value = true;
+}
+
 // Toggle alarm enabled state
 export function toggleAlarm() {
     alarmEnabled.value = !alarmEnabled.value;
     if (!alarmEnabled.value) {
         dismissAlarm();
     }
-}
-
-interface AlarmTimeInputProps {
-    currentTime: Signal<Date>;
-}
-
-export function AlarmSettings({ currentTime }: AlarmTimeInputProps) {
-    const timeToNextAlarm = computeTimeToNextAlarm(currentTime);
-
-    const handleTimeChange = (e: Event) => {
-        const target = e.target as HTMLInputElement;
-        const parts = target.value.split(":");
-        const hours = Number(parts[0]);
-        const minutes = Number(parts[1]);
-        if (!isNaN(hours) && !isNaN(minutes)) {
-            setAlarmHours(hours);
-            setAlarmMinutes(minutes);
-        }
-    };
-
-    const handleIntervalChange = (e: Event) => {
-        const target = e.target as HTMLInputElement;
-        const value = Number(target.value);
-        if (!isNaN(value) && value >= 1) {
-            preAlarmInterval.value = value;
-        }
-    };
-
-    const timeValue =
-        `${String(alarmHours.value).padStart(2, "0")}:` +
-        `${String(alarmMinutes.value).padStart(2, "0")}`;
-
-    return (
-        <SettingsCard>
-            {/* Alarm master toggle */}
-            <SettingsRow label="Hälytys">
-                <ToggleButton
-                    checked={alarmEnabled.value}
-                    checkbox
-                    onChange={toggleAlarm}
-                    checkedClass="bg-orange-500 text-white hover:bg-orange-600"
-                >
-                    ⏰ {alarmEnabled.value ? "Päällä" : "Poistettu"}
-                </ToggleButton>
-            </SettingsRow>
-
-            {alarmEnabled.value && (
-                <>
-                    {/* Time picker */}
-                    <SettingsRow label="Herätysaika">
-                        <TimeField
-                            id="alarm-time"
-                            label=""
-                            value={timeValue}
-                            onInput={handleTimeChange}
-                        />
-                    </SettingsRow>
-
-                    {/* Drag hint */}
-                    <p class="text-xs themed-subtle-text italic">
-                        Voit säätää herätystä myös vetämällä viisaria
-                    </p>
-
-                    {/* Countdown */}
-                    {timeToNextAlarm.value && (
-                        <p class="text-xs themed-subtle-text">
-                            {timeToNextAlarm.value.hours}h{" "}
-                            {timeToNextAlarm.value.minutes}min{" "}
-                            {timeToNextAlarm.value.seconds}s päästä
-                        </p>
-                    )}
-
-                    {/* Pre-alarm */}
-                    <div class="pt-1 border-t border-[var(--border-subtle)]">
-                        <CheckboxRow
-                            id="pre-alarm"
-                            label="Väliaikaviestit"
-                            checked={preAlarmEnabled.value}
-                            onChange={togglePreAlarm}
-                        >
-                            <SettingsRow label="Väli">
-                                <select
-                                    value={preAlarmInterval.value}
-                                    onInput={handleIntervalChange}
-                                    class="themed-field w-20 pl-2 pr-6 py-1 text-xs rounded"
-                                >
-                                    {Array.from(
-                                        { length: 60 },
-                                        (_, i) => i + 1,
-                                    ).map((v) => (
-                                        <option value={v}>{v} min</option>
-                                    ))}
-                                </select>
-                            </SettingsRow>
-                            <Tooltip
-                                content="Testaa väliaikaviesti"
-                                position="right"
-                            >
-                                <button
-                                    type="button"
-                                    onClick={testPreAlarm}
-                                    class="themed-secondary-button px-3 py-1 text-xs rounded transition-colors"
-                                >
-                                    🔊{" "}
-                                    {voice.value
-                                        ? `${voice.value.name} (${voice.value.lang})`
-                                        : "Ei ääntä?"}
-                                </button>
-                            </Tooltip>
-                        </CheckboxRow>
-                    </div>
-
-                    {/* Test alarm */}
-                    <div class="pt-1 border-t border-[var(--border-subtle)]">
-                        <button
-                            type="button"
-                            onClick={testAlarm}
-                            class="themed-secondary-button w-full px-4 py-2 text-sm rounded-lg transition-colors"
-                        >
-                            🔔 Testaa hälytys
-                        </button>
-                    </div>
-                </>
-            )}
-        </SettingsCard>
-    );
 }
 
 // Computed signal for alarm hand angle (12-hour display)
@@ -491,136 +376,19 @@ export const alarmHandAngle = computed(() => {
     return ((hours + minutes / 60) / 12) * 360;
 });
 
-// Hook to provide alarm hand drag functionality
-export function useAlarmHandDrag(svgRef: { current: SVGSVGElement | null }) {
-    const isDragging = useRef(false);
-
-    const getAngleFromEvent = (
-        clientX: number,
-        clientY: number,
-    ): number | null => {
-        const svg = svgRef.current;
-        if (!svg) return null;
-
-        const rect = svg.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-
-        const dx = clientX - centerX;
-        const dy = clientY - centerY;
-
-        // Calculate angle in degrees (0 = top, clockwise)
-        let angle = Math.atan2(dx, -dy) * (180 / Math.PI);
-        if (angle < 0) angle += 360;
-
-        return angle;
-    };
-
-    const updateAlarmFromAngle = (angle: number) => {
-        // Convert angle to hours (0-12) and minutes
-        const totalHours = (angle / 360) * 12;
-        const hours = Math.floor(totalHours);
-        const minutes = Math.round((totalHours - hours) * 60);
-
-        alarmHours.value = hours % 12;
-        alarmMinutes.value = minutes % 60;
-    };
-
-    const handleStart = (clientX: number, clientY: number) => {
-        isDragging.current = true;
-        alarmHandDragging.value = true;
-        const angle = getAngleFromEvent(clientX, clientY);
-        if (angle !== null) {
-            updateAlarmFromAngle(angle);
-        }
-    };
-
-    const handleMove = (clientX: number, clientY: number) => {
-        if (!isDragging.current) return;
-        const angle = getAngleFromEvent(clientX, clientY);
-        if (angle !== null) {
-            updateAlarmFromAngle(angle);
-        }
-    };
-
-    const handleEnd = () => {
-        isDragging.current = false;
-        alarmHandDragging.value = false;
-    };
-
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            handleMove(e.clientX, e.clientY);
-        };
-
-        const handleMouseUp = () => {
-            handleEnd();
-        };
-
-        const handleTouchMove = (e: TouchEvent) => {
-            const touch = e.touches[0];
-            if (touch) {
-                handleMove(touch.clientX, touch.clientY);
-            }
-        };
-
-        const handleTouchEnd = () => {
-            handleEnd();
-        };
-
-        document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseUp);
-        document.addEventListener("touchmove", handleTouchMove);
-        document.addEventListener("touchend", handleTouchEnd);
-
-        return () => {
-            document.removeEventListener("mousemove", handleMouseMove);
-            document.removeEventListener("mouseup", handleMouseUp);
-            document.removeEventListener("touchmove", handleTouchMove);
-            document.removeEventListener("touchend", handleTouchEnd);
-        };
-    }, []);
-
-    return { handleStart };
-}
-
-interface AlarmHandProps {
-    svgRef: { current: SVGSVGElement | null };
-}
-
-export function AlarmHand({ svgRef }: AlarmHandProps) {
-    const { handleStart } = useAlarmHandDrag(svgRef);
-
-    const onMouseDown = (e: MouseEvent) => {
-        e.preventDefault();
-        handleStart(e.clientX, e.clientY);
-    };
-
-    const onTouchStart = (e: TouchEvent) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        if (touch) {
-            handleStart(touch.clientX, touch.clientY);
-        }
-    };
-
+export function AlarmHand() {
     return (
-        <g
-            style={{ cursor: "pointer" }}
-            onMouseDown={onMouseDown}
-            onTouchStart={onTouchStart}
-        >
-            <line
-                x1="50"
-                y1="50"
-                x2="50"
-                y2={alarmHandDragging.value ? "15" : "35"}
-                stroke="#f97316"
-                stroke-width={alarmHandDragging.value ? "2" : "1"}
-                stroke-linecap="round"
-                transform={`rotate(${alarmHandAngle.value} 50 50)`}
-            />
-        </g>
+        <line
+            x1="50"
+            y1="50"
+            x2="50"
+            y2="35"
+            stroke="#f97316"
+            stroke-width="1"
+            stroke-linecap="round"
+            transform={`rotate(${alarmHandAngle.value} 50 50)`}
+            style={{ pointerEvents: "none" }}
+        />
     );
 }
 

@@ -36,6 +36,8 @@ html {
     --clock-hour-hand: #222222;
     --clock-minute-hand: #444444;
     --clock-center: #222222;
+    --badge-bg: #ffffff;
+    --badge-text: #111827;
 }
 
 :root[data-theme="dark"] {
@@ -66,6 +68,8 @@ html {
     --clock-hour-hand: #f8fafc;
     --clock-minute-hand: #cbd5e1;
     --clock-center: #f8fafc;
+    --badge-bg: #111827;
+    --badge-text: #f8fafc;
 }
 
 html,
@@ -118,6 +122,50 @@ body {
     color: var(--secondary-button-text);
 }
 
+.switch-off {
+    background-color: var(--field-border);
+}
+
+.time-picker-shell {
+    background-color: var(--field-bg);
+    color: var(--field-text);
+}
+
+.time-picker-select:hover {
+    background-color: var(--secondary-button-bg);
+}
+
+.quick-chip {
+    background-color: var(--field-bg);
+    color: var(--field-text);
+    border: 1px solid var(--field-border);
+}
+
+.quick-chip:hover {
+    border-color: #f97316;
+    color: #f97316;
+}
+
+.quick-chip:active {
+    background-color: #f97316;
+    border-color: #f97316;
+    color: #ffffff;
+}
+
+.segmented {
+    background-color: var(--field-bg);
+    border: 1px solid var(--field-border);
+}
+
+.segmented-option {
+    color: var(--text-muted);
+}
+
+.segmented-option:hover {
+    color: var(--text-primary);
+    background-color: var(--secondary-button-bg);
+}
+
 .footer-links {
     border-top: 1px solid var(--border-subtle);
 }
@@ -146,6 +194,67 @@ body {
 
 .toggle-unchecked:hover {
     background-color: var(--secondary-button-hover);
+}
+
+/* Clock stage: the face is always the largest square that fits. Badges are
+   absolutely positioned and sized in ClockBadges.tsx to use the space left
+   over, beside the face or in the corners. */
+.clock-stage {
+    position: relative;
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+}
+
+.clock-face {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(100%, 100dvh);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+}
+
+.clock-badge-slot {
+    position: absolute;
+}
+
+.clock-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.06em;
+    padding: 0.14em 0.32em;
+    border-radius: 0.2em;
+    background-color: var(--badge-bg);
+    color: var(--badge-text);
+    box-shadow: 0 0.04em 0.2em rgb(0 0 0 / 0.15);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.clock-badge-time {
+    display: flex;
+    align-items: baseline;
+    gap: 0.08em;
+}
+
+.clock-badge-small {
+    font-size: 0.38em;
+    font-weight: 600;
+    opacity: 0.75;
+}
+
+.clock-badge-icon {
+    font-size: 0.4em;
+    align-self: center;
+}
+
+.clock-badge-alarm .clock-badge-time {
+    color: #f97316;
 }
 
 @keyframes alarm-flash {
